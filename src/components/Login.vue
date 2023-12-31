@@ -10,7 +10,7 @@ const router = useRouter();
     formData.append('email', email);
     formData.append('password', password);
 
-    fetch('http://localhost:8001/api/login', {
+    fetch('http://45.55.126.45:8001/api/login', {
       method: 'POST',
       body: formData
     })
@@ -28,7 +28,7 @@ const router = useRouter();
 
         // If rememberMe is checked, make a request to set remember token
         if (rememberMe.value) {
-          fetch(`http://localhost:8001/api/remember/${data.user.id}/me`, {
+          fetch(`http://45.55.126.45:8001/api/remember/${data.user.id}/me`, {
             method: 'POST'
           })
             .then(response => response.json())

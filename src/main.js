@@ -6,7 +6,7 @@ import 'sweetalert2/dist/sweetalert2.min.css';
 
 
 // Set base URL for your API
-axios.defaults.baseURL = 'http://localhost:8001/api';
+axios.defaults.baseURL = 'http://45.55.126.45:8001/api';
 
 // You can also set authorization headers or other defaults here if needed
 

@@ -19,7 +19,7 @@ function register() {
     console.log(`${key}: ${value}`);
   }
 
-  fetch('http://localhost:8001/api/register', {
+  fetch('http://45.55.126.45:8001/api/register', {
     method: 'POST',
     body: formData
   })

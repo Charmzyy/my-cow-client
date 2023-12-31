@@ -35,7 +35,7 @@ const logout = async () => {
   //     body: JSON.stringify({}), // If your endpoint requires a body, adjust this object accordingly
   //   };
 
-  //   const response = await fetch('http://localhost:8001/logout', requestOptions);
+  //   const response = await fetch('http://45.55.126.45:8001/logout', requestOptions);
 
   //   if (response.ok) {
   //     console.log('Logout successful');
