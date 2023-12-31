@@ -15,7 +15,7 @@
   'Authorization': `Bearer ${token}`,
   };
   
-  const response = await fetch(`http://127.0.0.1:8001/api/admin/verified?page=${page}`, { headers });
+  const response = await fetch(`http://45.55.126.45:8001/api/admin/verified?page=${page}`, { headers });
   const data = await response.json();
   
   console.log('Fetched data:', data); // Log the entire response to see its structure
@@ -39,7 +39,7 @@
   <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
   <div class="col" v-for="post in posts.data" :key="post.id">
   <div class="card">
-  <img :src="'http://localhost:8001/storage/' + post.image" class="post-image" />
+  <img :src="'http://45.55.126.45:8001/storage/' + post.image" class="post-image" />
   
   <div class="card-body">
   <p class="card-text">Cow Name{{ post.cow_name }}</p>

@@ -21,7 +21,7 @@ async function post() {
 
   try {
     
-    const response = await axios.post('http://127.0.0.1:8001/api/reset/password', formData, {
+    const response = await axios.post('http://45.55.126.45:8001/api/reset/password', formData, {
       headers: {
         
         'Content-Type': 'multipart/form-data',
