@@ -9,7 +9,7 @@ const headers = {
   'Authorization': `Bearer ${token}`,
 };
 
-fetch('https://45.55.126.45:8001/api/admin/users', {
+fetch('http://localhost:8001/api/admin/users', {
   headers
 })
   .then(response => response.json())
@@ -17,7 +17,7 @@ fetch('https://45.55.126.45:8001/api/admin/users', {
   .catch(error => console.error('Error fetching users:', error));
 
 const deleteUser = (id) => {
-  fetch(`https://45.55.126.45:8001/api/admin/${id}/delete`, {
+  fetch(`http://localhost:8001/api/admin/${id}/delete`, {
     method: 'DELETE',
     headers: {
       'Authorization': `Bearer ${token}`,

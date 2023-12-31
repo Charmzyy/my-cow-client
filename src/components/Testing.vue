@@ -13,7 +13,7 @@
     },
     mounted() {
       // Make an API call to your Laravel backend to fetch the image URL
-      fetch('https://45.55.126.45:8001/image-url') // Update with your Laravel server URL
+      fetch('http://localhost:8001/image-url') // Update with your Laravel server URL
         .then(response => response.json())
         .then(data => {
           this.imageUrl = data.imageUrl; // Set the received image URL to imageUrl
