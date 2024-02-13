@@ -1,6 +1,6 @@
 # Vue.js Frontend Application
 
-![Vue.js Logo](src/assets/logo.png)
+![Vue.js Logo](src/assets/vue.svg)
 
 Welcome to the Vue.js frontend application repository! This application serves as the user interface for interacting with our cow breed classification system. Users can log in, submit images of cows, and view classification results using this frontend application.
 
