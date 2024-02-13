@@ -22,10 +22,19 @@ To set up and run the Vue.js frontend application locally, follow these steps:
 
 ## Screenshots
 
-![Login Page]()
-*Login Page*
+![Landing Page](src/assets/landing)
+*Landing Page*
 
-![Image Upload]()
+![Login Upload](src/assets/loginpage)
+*Login Upload*
+
+![Image Upload](src/assets/posting)
+*Image Upload*
+
+![Results ](src/assets/resultss)
+*Results*
+
+![Image Upload](src/assets/admin)
 *Image Upload*
 
 ## Technologies Used
