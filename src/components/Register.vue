@@ -19,7 +19,7 @@ function register() {
     console.log(`${key}: ${value}`);
   }
 
-  fetch('http://45.55.126.45:8001/api/register', {
+  fetch('https://my-cow-rest.onrender.com/api/register', {
     method: 'POST',
     body: formData
   })

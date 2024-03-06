@@ -16,7 +16,7 @@ async function post() {
 
   try {
     const token = localStorage.getItem('token');
-    const response = await axios.post('http://45.55.126.45:8001/api/forgot/password', formData, {
+    const response = await axios.post('https://my-cow-rest.onrender.com/api/forgot/password', formData, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'multipart/form-data',
