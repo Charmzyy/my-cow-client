@@ -1,0 +1,215 @@
+/* ---------------------------------------------------------------------------
+   MyCow design tokens
+   Pasture green (primary) · Savanna gold (accent) · Red ochre (heritage, from the logo)
+   on a warm cream background. Light theme only: the app is used outdoors on phones,
+   where a high-contrast light UI reads best in sunlight.
+   --------------------------------------------------------------------------- */
+:root {
+  --mc-green-950: #0e2a19;
+  --mc-green-900: #12361f;
+  --mc-green-800: #164e2e;
+  --mc-green-700: #1b5e37;   /* primary: white text = 7.6:1 */
+  --mc-green-600: #23744a;
+  --mc-green-100: #dcebe0;
+  --mc-green-50:  #eef5f0;
+
+  --mc-gold-600: #b77f0e;
+  --mc-gold-500: #e0a526;    /* accent: use with dark ink text, never white */
+  --mc-gold-100: #fbefd2;
+  --mc-gold-50:  #fdf7e8;
+
+  --mc-ochre-700: #8a2f35;
+  --mc-ochre-600: #a63a42;   /* logo colour */
+  --mc-ochre-50:  #f8eaea;
+
+  --mc-cream:   #f7f4ec;
+  --mc-surface: #ffffff;
+  --mc-ink:     #1c251e;
+  --mc-ink-2:   #4a554c;
+  --mc-muted:   #6b746c;
+  --mc-border:  #e4dfd2;
+  --mc-border-strong: #cfc8b6;
+
+  --mc-success: #1b5e37;
+  --mc-warning: #8a5a00;
+  --mc-danger:  #b42318;
+
+  --mc-radius:    14px;
+  --mc-radius-sm: 10px;
+  --mc-shadow:    0 1px 2px rgb(28 37 30 / 6%), 0 4px 16px rgb(28 37 30 / 6%);
+  --mc-shadow-lg: 0 2px 4px rgb(28 37 30 / 6%), 0 16px 40px rgb(28 37 30 / 10%);
+
+  --mc-font: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", "Helvetica Neue", Arial, sans-serif;
+
+  /* Re-point Bootstrap at the brand */
+  --bs-body-font-family: var(--mc-font);
+  --bs-body-color: var(--mc-ink);
+  --bs-body-bg: var(--mc-cream);
+  --bs-primary: var(--mc-green-700);
+  --bs-primary-rgb: 27, 94, 55;
+  --bs-link-color: var(--mc-green-700);
+  --bs-link-color-rgb: 27, 94, 55;
+  --bs-link-hover-color: var(--mc-green-800);
+  --bs-link-hover-color-rgb: 22, 78, 46;
+  --bs-border-color: var(--mc-border);
+  --bs-border-radius: var(--mc-radius-sm);
+  --bs-focus-ring-color: rgb(27 94 55 / 25%);
+}
+
+html, body { background: var(--mc-cream); }
+body {
+  font-family: var(--mc-font);
+  color: var(--mc-ink);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+h1, h2, h3, h4, h5 { color: var(--mc-ink); font-weight: 750; letter-spacing: -0.01em; }
+a { text-decoration: none; }
+::selection { background: var(--mc-gold-100); }
+:focus-visible { outline: 3px solid var(--mc-gold-500); outline-offset: 2px; }
+
+/* ---------- Buttons (min 48px tall: thumb-friendly) ---------- */
+.btn {
+  --bs-btn-font-weight: 650;
+  --bs-btn-border-radius: var(--mc-radius-sm);
+  --bs-btn-padding-y: .7rem;
+  --bs-btn-padding-x: 1.25rem;
+  min-height: 48px;
+  display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+}
+.btn-sm { min-height: 38px; --bs-btn-padding-y: .4rem; --bs-btn-padding-x: .9rem; }
+.btn-lg { min-height: 54px; --bs-btn-font-size: 1.05rem; }
+.btn-primary {
+  --bs-btn-bg: var(--mc-green-700); --bs-btn-border-color: var(--mc-green-700);
+  --bs-btn-hover-bg: var(--mc-green-800); --bs-btn-hover-border-color: var(--mc-green-800);
+  --bs-btn-active-bg: var(--mc-green-900); --bs-btn-active-border-color: var(--mc-green-900);
+  --bs-btn-disabled-bg: var(--mc-green-700); --bs-btn-disabled-border-color: var(--mc-green-700);
+}
+.btn-accent {
+  --bs-btn-color: var(--mc-ink); --bs-btn-bg: var(--mc-gold-500); --bs-btn-border-color: var(--mc-gold-500);
+  --bs-btn-hover-color: var(--mc-ink); --bs-btn-hover-bg: #d39916; --bs-btn-hover-border-color: #d39916;
+  --bs-btn-active-color: var(--mc-ink); --bs-btn-active-bg: #c08a10; --bs-btn-active-border-color: #c08a10;
+}
+.btn-outline {
+  --bs-btn-color: var(--mc-ink); --bs-btn-bg: var(--mc-surface); --bs-btn-border-color: var(--mc-border-strong);
+  --bs-btn-hover-color: var(--mc-ink); --bs-btn-hover-bg: var(--mc-green-50); --bs-btn-hover-border-color: var(--mc-green-700);
+  --bs-btn-active-color: var(--mc-ink); --bs-btn-active-bg: var(--mc-green-100); --bs-btn-active-border-color: var(--mc-green-700);
+}
+.btn-ghost-light {
+  --bs-btn-color: #fff; --bs-btn-border-color: rgb(255 255 255 / 45%);
+  --bs-btn-hover-color: var(--mc-green-900); --bs-btn-hover-bg: #fff; --bs-btn-hover-border-color: #fff;
+}
+.btn-danger-soft {
+  --bs-btn-color: var(--mc-danger); --bs-btn-bg: var(--mc-surface); --bs-btn-border-color: #f0c7c2;
+  --bs-btn-hover-color: #fff; --bs-btn-hover-bg: var(--mc-danger); --bs-btn-hover-border-color: var(--mc-danger);
+  --bs-btn-active-color: #fff; --bs-btn-active-bg: #8f1c13; --bs-btn-active-border-color: #8f1c13;
+}
+
+/* ---------- Forms ---------- */
+.form-label { font-weight: 650; font-size: .92rem; color: var(--mc-ink); margin-bottom: .4rem; }
+.form-control {
+  min-height: 50px; border-radius: var(--mc-radius-sm);
+  border-color: var(--mc-border-strong); background: var(--mc-surface); font-size: 1rem;
+}
+.form-control:focus { border-color: var(--mc-green-700); box-shadow: 0 0 0 4px rgb(27 94 55 / 15%); }
+.form-control.is-invalid { border-color: var(--mc-danger); }
+.form-hint { font-size: .85rem; color: var(--mc-muted); margin-top: .35rem; }
+.input-group-pw { position: relative; }
+.input-group-pw .form-control { padding-right: 3.25rem; }
+.input-group-pw .pw-toggle {
+  position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
+  min-height: 42px; width: 44px; border: 0; background: transparent; color: var(--mc-muted);
+  border-radius: 8px; display: grid; place-items: center;
+}
+.input-group-pw .pw-toggle:hover { color: var(--mc-ink); background: var(--mc-green-50); }
+
+/* ---------- Surfaces ---------- */
+.mc-card {
+  background: var(--mc-surface); border: 1px solid var(--mc-border);
+  border-radius: var(--mc-radius); box-shadow: var(--mc-shadow);
+}
+.mc-page { padding: 1.5rem 0 6.5rem; }           /* bottom room for the mobile tab bar */
+@media (min-width: 768px) { .mc-page { padding: 2.5rem 0 4rem; } }
+.mc-page-head { margin-bottom: 1.5rem; }
+.mc-page-head h1 { font-size: clamp(1.6rem, 3.5vw, 2.1rem); margin: 0 0 .35rem; }
+.mc-page-head p { color: var(--mc-ink-2); margin: 0; max-width: 60ch; }
+.mc-eyebrow {
+  display: inline-flex; align-items: center; gap: .4rem;
+  font-size: .78rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--mc-gold-600);
+}
+
+/* ---------- Alerts ---------- */
+.mc-alert {
+  display: flex; gap: .65rem; align-items: flex-start;
+  padding: .8rem 1rem; border-radius: var(--mc-radius-sm); font-size: .95rem; border: 1px solid;
+}
+.mc-alert svg { flex: none; margin-top: 2px; }
+.mc-alert-error   { background: #fdf0ee; border-color: #f3c9c3; color: #7a1a12; }
+.mc-alert-success { background: var(--mc-green-50); border-color: var(--mc-green-100); color: var(--mc-green-900); }
+.mc-alert-info    { background: var(--mc-gold-50); border-color: var(--mc-gold-100); color: #5c3d00; }
+
+/* ---------- Chips / badges (status always = icon + label, never colour alone) ---------- */
+.mc-chip {
+  display: inline-flex; align-items: center; gap: .35rem;
+  padding: .28rem .65rem; border-radius: 999px; font-size: .8rem; font-weight: 650;
+  border: 1px solid transparent; white-space: nowrap;
+}
+.mc-chip-green { background: var(--mc-green-50); color: var(--mc-green-800); border-color: var(--mc-green-100); }
+.mc-chip-gold  { background: var(--mc-gold-50);  color: #6b4700; border-color: var(--mc-gold-100); }
+.mc-chip-ochre { background: var(--mc-ochre-50); color: var(--mc-ochre-700); border-color: #efd0d2; }
+.mc-chip-ink   { background: #f1efe8; color: var(--mc-ink-2); border-color: var(--mc-border); }
+
+/* ---------- Confidence meter ---------- */
+.mc-meter { height: 10px; border-radius: 999px; background: #ece8dc; overflow: hidden; }
+.mc-meter > span { display: block; height: 100%; border-radius: 999px; transition: width .6s ease; }
+.mc-meter.high > span { background: var(--mc-green-700); }
+.mc-meter.mid  > span { background: var(--mc-gold-500); }
+.mc-meter.low  > span { background: var(--mc-ochre-600); }
+
+/* ---------- Empty / loading ---------- */
+.mc-empty {
+  text-align: center; padding: 3rem 1.25rem; color: var(--mc-ink-2);
+  border: 1.5px dashed var(--mc-border-strong); border-radius: var(--mc-radius); background: var(--mc-surface);
+}
+.mc-empty .mc-empty-icon {
+  width: 56px; height: 56px; border-radius: 16px; margin: 0 auto 1rem;
+  display: grid; place-items: center; background: var(--mc-green-50); color: var(--mc-green-700);
+}
+.mc-empty h3 { font-size: 1.1rem; margin-bottom: .35rem; }
+.mc-skeleton {
+  background: linear-gradient(90deg, #ece8dc 25%, #f4f1e8 50%, #ece8dc 75%);
+  background-size: 200% 100%; animation: mc-shimmer 1.3s infinite; border-radius: var(--mc-radius);
+}
+@keyframes mc-shimmer { to { background-position: -200% 0; } }
+
+/* ---------- Brand mark (cow silhouette tinted via mask) ---------- */
+.mc-mark {
+  display: inline-grid; place-items: center; flex: none;
+  width: 40px; height: 40px; border-radius: 12px; background: var(--mc-green-700);
+}
+.mc-mark::before {
+  content: ""; width: 72%; height: 72%; background: var(--mc-gold-500);
+  -webkit-mask: url(/cow.svg) center / contain no-repeat; mask: url(/cow.svg) center / contain no-repeat;
+}
+
+/* ---------- Post (photo) cards ---------- */
+.mc-photo-card { overflow: hidden; display: flex; flex-direction: column; height: 100%; }
+.mc-photo-card .mc-photo {
+  aspect-ratio: 4 / 3; width: 100%; object-fit: cover; background: #ece8dc; display: block;
+}
+.mc-photo-card .mc-photo-body { padding: 1rem 1rem 1.1rem; display: flex; flex-direction: column; gap: .6rem; flex: 1; }
+.mc-photo-card h3 { font-size: 1.1rem; margin: 0; }
+.mc-meta { font-size: .87rem; color: var(--mc-ink-2); display: flex; flex-direction: column; gap: .15rem; }
+.mc-meta b { color: var(--mc-ink); font-weight: 650; }
+
+/* SweetAlert2 dialogs in brand colours */
+.swal2-popup { border-radius: var(--mc-radius) !important; font-family: var(--mc-font) !important; }
+.swal2-styled.swal2-confirm { background: var(--mc-green-700) !important; border-radius: var(--mc-radius-sm) !important; }
+.swal2-styled.swal2-deny, .swal2-styled.swal2-confirm.mc-danger { background: var(--mc-danger) !important; }
+.swal2-styled.swal2-cancel { background: #ece8dc !important; color: var(--mc-ink) !important; border-radius: var(--mc-radius-sm) !important; }
+.swal2-input, .swal2-textarea { border-radius: var(--mc-radius-sm) !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}

@@ -1,52 +1,52 @@
 <script setup>
-import { API_URL } from '../config';
-import axios from 'axios';
 import { ref } from 'vue';
-import { useRouter } from 'vue-router';
+import AuthLayout from './ui/AuthLayout.vue';
+import Icon from './ui/Icon.vue';
+import { api, form } from '../api';
 
-const router = useRouter();
 const email = ref('');
+const loading = ref(false);
+const error = ref('');
+const sent = ref(false);
 
-
-
-
-async function post() {
-  const formData = new FormData();
-  formData.append('email', email.value);
-  
-
+async function send() {
+  error.value = '';
+  loading.value = true;
   try {
-    const token = localStorage.getItem('token');
-    const response = await axios.post(`${API_URL}/forgot/password`, formData, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-
-    console.log('Response:', response.data);
-    router.push('/reset');
-
-  } catch (error) {
-    console.error('Error occurred:', error);
-    // Handle error or show an error message here
+    await api('/forgot/password', { method: 'POST', body: form({ email: email.value.trim() }) });
+    sent.value = true;
+  } catch (e) {
+    error.value = e.status === 422 ? 'We couldn’t find an account with that email address.' : e.message;
+  } finally {
+    loading.value = false;
   }
 }
 </script>
+
 <template>
-    <div class="container mt-5">
-      <div class="row justify-content-center">
-        <div class="col-md-8">
-          <div class="card border-dark border-2 p-4">
-            <h2 class="text-center mb-4">Enter Email</h2>
-            <div class="form-group">
-             
-              <input type="text" v-model="email" placeholder="email" class="form-control mb-4" />
-              
-            </div>
-            <button type="submit" class="btn btn-primary btn-lg btn-block" @click.prevent="post">Submit</button>
-          </div>
-        </div>
+  <AuthLayout title="Reset your password" subtitle="Enter your email and we’ll send you a reset code.">
+    <div v-if="sent" class="d-grid gap-3">
+      <div class="mc-alert mc-alert-success" role="status">
+        <Icon name="mail" :size="18" />
+        <span>Check <strong>{{ email }}</strong> for your reset code, then enter it on the next screen.</span>
       </div>
+      <router-link :to="{ path: '/reset', query: { email } }" class="btn btn-primary btn-lg w-100">
+        Enter reset code <Icon name="arrow-right" :size="18" />
+      </router-link>
     </div>
-  </template>
+
+    <form v-else novalidate @submit.prevent="send">
+      <div v-if="error" class="mc-alert mc-alert-error" role="alert"><Icon name="alert" :size="18" />{{ error }}</div>
+      <div>
+        <label class="form-label" for="forgot-email">Email address</label>
+        <input id="forgot-email" v-model="email" type="email" class="form-control" autocomplete="email" inputmode="email" required />
+      </div>
+      <button type="submit" class="btn btn-primary btn-lg w-100" :disabled="loading || !email">
+        <span v-if="loading" class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+        {{ loading ? 'Sending…' : 'Send reset code' }}
+      </button>
+    </form>
+
+    <template #footer><router-link to="/login"><Icon name="arrow-left" :size="16" /> Back to sign in</router-link></template>
+  </AuthLayout>
+</template>

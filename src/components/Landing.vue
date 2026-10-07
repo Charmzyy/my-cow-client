@@ -1,341 +1,260 @@
+<script setup>
+import Icon from './ui/Icon.vue';
+import { BREEDS, breedLabel } from '../breeds';
+
+const breeds = Object.entries(BREEDS);
+const year = new Date().getFullYear();
+
+const steps = [
+  { icon: 'camera', title: 'Take a photo', text: 'Stand side-on to the animal in good daylight and snap the whole cow with your phone.' },
+  { icon: 'sprout', title: 'Get the breed', text: 'Our model compares it against eight breeds and shows the most likely match with a confidence score.' },
+  { icon: 'shield', title: 'Get it certified', text: 'A livestock officer reviews the result. Approved animals receive a certified breed record.' },
+];
+
+const audiences = [
+  { icon: 'sprout', title: 'Farmers', text: 'Know what you keep before you breed, sell or plan feeding and milk targets.' },
+  { icon: 'tag', title: 'Buyers & traders', text: 'Check a breed claim on the spot at the market before money changes hands.' },
+  { icon: 'review', title: 'Officers & cooperatives', text: 'Review submissions in one queue and issue verified records for your members.' },
+];
+</script>
+
 <template>
-<section class="hero">
-    <div class="container">
-        <div class="row align-items-center">
-            <!-- text -->
-            <div class="col-md-6">
-                <img src="../assets/logo.png" alt="hero-img" class="w-50">
+  <div class="landing">
+    <!-- Hero -->
+    <section class="hero">
+      <div class="container">
+        <div class="row align-items-center g-5">
+          <div class="col-lg-6">
+            <span class="mc-eyebrow"><Icon name="sprout" :size="16" /> Cattle breed identification</span>
+            <h1 class="hero-title">Know your cow’s breed in seconds.</h1>
+            <p class="hero-lead">
+              Snap a photo with your phone. MyCow identifies the breed, and a livestock officer
+              reviews it so you get a record you can trust.
+            </p>
+            <div class="hero-ctas">
+              <router-link to="/register" class="btn btn-primary btn-lg">
+                Identify a cow, free <Icon name="arrow-right" :size="18" />
+              </router-link>
+              <router-link to="/login" class="btn btn-outline btn-lg">I have an account</router-link>
             </div>
-            <div class="col-md-6">
-                <div class="text">
-                    Welcome to MyCow Get your cow classified within seconds
-                </div>
-                <div class="buttons mt-3">
-                    
-                    <router-link to="/register" class="btn btn-secondary btn-lg">Register</router-link>
-                    <router-link to="/login" class="btn btn-outline-secondary btn-lg ms-3 ">Login</router-link>
-                    
-                </div>
-            </div>
+            <ul class="hero-points">
+              <li><Icon name="phone" :size="16" /> Works on any smartphone</li>
+              <li><Icon name="image" :size="16" /> Light on mobile data</li>
+              <li><Icon name="shield" :size="16" /> Officer-verified results</li>
+            </ul>
+          </div>
 
-    <!-- image -->
-            
-        </div>
-    </div>
-</section>
-<section class="setup">
-    <div class="container">
-        <div class="text-header text-center">
-            <h3>Lets Get started Quickly</h3>
-            <p>Effortlessly classify your cow by following these simple steps</p>
-        </div>
-        <div class="items text-center">
-            <div class="row">
-                <div class="col-md-4">
-                    <div class="icons">
-                        <img src="../assets/register.jpeg" alt="icons">
-                    </div>
-                    <div class="desc">
-                        <h5>Create Account</h5>
-                        <p>Begin your journey with MyCow Classifier by creating your account.
-                             Enter your details to access our platform's features and image submission process seamlessly</p>
-                    </div>
-
+          <div class="col-lg-6">
+            <div class="hero-visual" aria-hidden="true">
+              <div class="mock mc-card">
+                <div class="mock-photo"><span class="mock-cow"></span><span class="mock-scan"></span></div>
+                <div class="mock-body">
+                  <span class="mc-eyebrow">Example result</span>
+                  <div class="d-flex align-items-baseline justify-content-between mt-1">
+                    <span class="mock-breed">Boran</span>
+                    <span class="mock-pct">94.2%</span>
+                  </div>
+                  <div class="mc-meter high my-2"><span style="width: 94%"></span></div>
+                  <div class="d-flex flex-wrap gap-2">
+                    <span class="mc-chip mc-chip-ink">Beef · East Africa</span>
+                    <span class="mc-chip mc-chip-gold"><Icon name="clock" :size="14" /> Awaiting officer review</span>
+                  </div>
                 </div>
-                <div class="col-md-4">
-                    <div class="icons">
-                        <img src="../assets/camera.jpeg" alt="icons">
-                    </div>
-                    <div class="desc">
-                        <h5>Submit Image</h5>
-                        <p>At MyCow Classifier, submit your images effortlessly through our platform.
-                             Our advanced model processes them for accurate classification.</p>
-                    </div>
-
-                </div>
-                <div class="col-md-4">
-                    <div class="icons">
-                        <img src="../assets/resuts.jpeg" alt="icons">
-                    </div>
-                    <div class="desc">
-                        <h5>Receive Results</h5>
-                        <p>Our system generates certificates based on the image classification results,
-                     providing you with certified documentation for your records.</p>
-                    </div>
-
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-<section class="information">
-    <div class="container">
-        <div class="row info-1">
-            <div class="col-md-6">
-                <div class="text-infomration"> <h5>Worrying about accuracy</h5>
-                <p>At MyCow Classifier, we understand the importance of accuracy in image classification. Our advanced algorithms and dedicated team ensure precise results. 
-                    </p>
-                    </div>
-            </div>
-            <div class="col-md-6">
-                <img src="../assets/accuracy.jpeg" alt="img-1" class="w-100">
-            </div>
-        </div>
-        <div class="row info-2">
-            <div class="col-md-6">
-                <img src="../assets/certify.jpeg" alt="img-1" class="w-100">
-            </div>
-            <div class="col-md-6">
-                <div class="text-infomration"> <h5>Certifaction Provided</h5>
-                <p>Once your images are processed and analyzed, we provide detailed certifications. These certificates outline the classification results,
-                     ensuring transparency and reliability in the information provided to you</p>
-                    </div>
-            </div>
-            
-        </div>
-        
-    </div>
-</section>
-<footer>
-    <div class="container">
-      <div class="row">
-        <div class="col-md-6">
-          <div class="row row-cols-1 row-cols-lg-5 g-2 lg-3">
-            <div class="col-md-3">
-              <div>
-                <small><a href="#" class="text-decoration-none">Phone: 123-456-7890</a></small>
               </div>
-            </div>
-            <div class="col-md-3">
-              <div>
-                <small><a href="#" class="text-decoration-none">Location: Your Office Address</a></small>
-              </div>
-            </div>
-            <div class="col-md-3">
-              <div>
-                <small><a href="#" class="text-decoration-none">Email: contact@mycowclassifier.com</a></small>
+              <div class="float-badge mc-card">
+                <span class="float-icon"><Icon name="award" :size="20" /></span>
+                <div><strong>Certified</strong><small>by a livestock officer</small></div>
               </div>
             </div>
           </div>
         </div>
-        <div class="copy">
-          &copy; 2024 MyCow Classifier
+      </div>
+    </section>
+
+    <!-- Breeds -->
+    <section class="section section-tight">
+      <div class="container">
+        <div class="text-center mb-4">
+          <h2 class="section-title">Recognises 8 breeds</h2>
+          <p class="section-lead mx-auto">From hardy East African zebu to high-yield dairy breeds.</p>
+        </div>
+        <div class="breed-grid">
+          <div v-for="[name, b] in breeds" :key="name" class="breed mc-card">
+            <div class="d-flex align-items-center justify-content-between gap-2">
+              <strong>{{ breedLabel(name) }}</strong>
+              <span class="mc-chip" :class="b.use === 'Dairy' ? 'mc-chip-green' : b.use === 'Beef' ? 'mc-chip-ochre' : 'mc-chip-gold'">{{ b.use }}</span>
+            </div>
+            <p>{{ b.note }}</p>
+          </div>
         </div>
       </div>
-    </div>
-  </footer>
+    </section>
 
+    <!-- How it works -->
+    <section class="section">
+      <div class="container">
+        <div class="text-center mb-5">
+          <span class="mc-eyebrow">How it works</span>
+          <h2 class="section-title">Three steps, about a minute</h2>
+        </div>
+        <div class="row g-4">
+          <div v-for="(s, i) in steps" :key="s.title" class="col-md-4">
+            <div class="step">
+              <div class="step-icon"><Icon :name="s.icon" :size="26" /><span class="step-num">{{ i + 1 }}</span></div>
+              <h3>{{ s.title }}</h3>
+              <p>{{ s.text }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Who it's for -->
+    <section class="section section-alt">
+      <div class="container">
+        <div class="row g-4 align-items-center">
+          <div class="col-lg-4">
+            <span class="mc-eyebrow">Built for the field</span>
+            <h2 class="section-title">For everyone who works with cattle</h2>
+            <p class="section-lead">Simple enough for a first-time smartphone user, structured enough for a cooperative’s records.</p>
+          </div>
+          <div class="col-lg-8">
+            <div class="row g-3">
+              <div v-for="a in audiences" :key="a.title" class="col-md-4">
+                <div class="audience mc-card">
+                  <span class="audience-icon"><Icon :name="a.icon" :size="22" /></span>
+                  <h3>{{ a.title }}</h3>
+                  <p>{{ a.text }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA band -->
+    <section class="section">
+      <div class="container">
+        <div class="cta-band">
+          <div>
+            <h2>Ready to identify your herd?</h2>
+            <p>Create a free account and submit your first photo today.</p>
+          </div>
+          <div class="d-flex flex-wrap gap-2">
+            <router-link to="/register" class="btn btn-accent btn-lg">Create free account</router-link>
+            <router-link to="/login" class="btn btn-ghost-light btn-lg">Sign in</router-link>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="site-footer">
+      <div class="container d-flex flex-column flex-md-row align-items-center justify-content-between gap-3">
+        <div class="d-flex align-items-center gap-2">
+          <span class="mc-mark" style="width: 32px; height: 32px; border-radius: 9px" aria-hidden="true"></span>
+          <strong>MyCow</strong>
+          <span class="text-muted-2">· Cattle breed identification</span>
+        </div>
+        <div class="d-flex gap-3 align-items-center">
+          <router-link to="/login">Sign in</router-link>
+          <router-link to="/register">Create account</router-link>
+          <span class="text-muted-2">© {{ year }} MyCow</span>
+        </div>
+      </div>
+    </footer>
+  </div>
 </template>
+
 <style>
-.btn{
-    border-radius: 8px;
-    
+.landing .hero {
+  padding: 3rem 0 4rem;
+  background:
+    radial-gradient(60rem 30rem at 85% -10%, rgb(224 165 38 / 16%), transparent 60%),
+    radial-gradient(50rem 30rem at -10% 110%, rgb(27 94 55 / 10%), transparent 60%);
 }
-.btn-primary,
-.btn-outline-secondary {
-    padding:12px 20px;
+@media (min-width: 992px) { .landing .hero { padding: 5rem 0 6rem; } }
+.hero-title {
+  font-size: clamp(2.2rem, 6vw, 3.6rem); line-height: 1.05; font-weight: 800;
+  letter-spacing: -0.03em; margin: 1rem 0 1.1rem;
 }
+.hero-lead { font-size: clamp(1.05rem, 2vw, 1.2rem); color: var(--mc-ink-2); max-width: 34rem; line-height: 1.6; }
+.hero-ctas { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1.75rem; }
+@media (max-width: 575px) { .hero-ctas .btn { width: 100%; } }
+.hero-points { list-style: none; padding: 0; margin: 1.75rem 0 0; display: flex; flex-wrap: wrap; gap: .5rem 1.25rem; color: var(--mc-ink-2); font-size: .92rem; font-weight: 600; }
+.hero-points li { display: inline-flex; align-items: center; gap: .4rem; }
+.hero-points svg { color: var(--mc-green-700); }
 
-.btn-primary {
-    background-color: #3155e7;
+.hero-visual { position: relative; max-width: 440px; margin: 0 auto; padding: 0 0 2rem; }
+.mock { overflow: hidden; box-shadow: var(--mc-shadow-lg); transform: rotate(-1.5deg); }
+.mock-photo {
+  position: relative; aspect-ratio: 16 / 10; overflow: hidden;
+  background: linear-gradient(180deg, #f6e7bd 0%, #f2d48a 52%, #a7bf6f 53%, #6f9447 100%);
 }
-.btn-primary:hover {
-    background-color: #2045d6;
+.mock-cow {
+  position: absolute; left: 16%; right: 16%; top: 22%; bottom: 6%;
+  background: #3b2a22; -webkit-mask: url(/cow.svg) center / contain no-repeat; mask: url(/cow.svg) center / contain no-repeat;
 }
-.btn-outline-secondary{
-border: 1px solid #d3d4db;
-color:#010101;
+.mock-scan {
+  position: absolute; inset: 14% 12%; border: 2px solid rgb(255 255 255 / 85%); border-radius: 12px;
+  box-shadow: 0 0 0 999px rgb(0 0 0 / 8%);
+}
+.mock-body { padding: 1.1rem 1.25rem 1.3rem; }
+.mock-breed { font-size: 1.6rem; font-weight: 800; letter-spacing: -0.02em; }
+.mock-pct { font-weight: 750; color: var(--mc-green-800); font-variant-numeric: tabular-nums; }
+.float-badge {
+  position: absolute; right: -6px; bottom: 0; display: flex; align-items: center; gap: .7rem;
+  padding: .75rem 1rem; box-shadow: var(--mc-shadow-lg); transform: rotate(2deg);
+}
+.float-badge strong { display: block; line-height: 1.1; }
+.float-badge small { color: var(--mc-muted); }
+.float-icon { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: var(--mc-gold-500); color: var(--mc-ink); }
 
-}
-.btn-outline-secondary:hover {
-    background-colour :#d3d4db;
-    border: 1px solid #d3d4db;
-color: #010101;
-}
+.landing .section { padding: 4rem 0; }
+.landing .section-tight { padding: 2.5rem 0 3rem; }
+.landing .section-alt { background: var(--mc-surface); border-block: 1px solid var(--mc-border); }
+.section-title { font-size: clamp(1.6rem, 3.5vw, 2.3rem); font-weight: 800; letter-spacing: -0.02em; margin: .5rem 0 .6rem; }
+.section-lead { color: var(--mc-ink-2); max-width: 36rem; font-size: 1.05rem; }
 
-.navbar {
-  padding: 20px 0;
-}
+.breed-grid { display: grid; gap: .85rem; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
+.breed { padding: 1rem 1.1rem; box-shadow: none; }
+.breed p { margin: .45rem 0 0; color: var(--mc-ink-2); font-size: .9rem; line-height: 1.5; }
 
-.navbar-brand {
-  font-size: 24px; /* Adjust font size */
+.step { text-align: center; padding: 0 1rem; }
+.step-icon {
+  position: relative; width: 68px; height: 68px; margin: 0 auto 1.1rem; border-radius: 20px;
+  display: grid; place-items: center; background: var(--mc-green-700); color: #fff;
 }
+.step-num {
+  position: absolute; top: -8px; right: -8px; width: 28px; height: 28px; border-radius: 50%;
+  display: grid; place-items: center; background: var(--mc-gold-500); color: var(--mc-ink);
+  font-weight: 800; font-size: .85rem; border: 3px solid var(--mc-cream);
+}
+.step h3 { font-size: 1.2rem; }
+.step p { color: var(--mc-ink-2); max-width: 22rem; margin: 0 auto; }
 
-.navbar-nav {
-  margin-left: auto;
-}
+.audience { padding: 1.4rem; height: 100%; box-shadow: none; background: var(--mc-cream); }
+.audience-icon { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; background: var(--mc-green-100); color: var(--mc-green-800); margin-bottom: .9rem; }
+.audience h3 { font-size: 1.1rem; }
+.audience p { color: var(--mc-ink-2); margin: 0; font-size: .95rem; }
 
-.nav-link {
-  font-size: 16px;
-  color: black;
-  margin-left: 0;
+.cta-band {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1.5rem;
+  padding: 2.5rem; border-radius: 22px; color: #fff;
+  background: linear-gradient(135deg, var(--mc-green-800), var(--mc-green-950));
+  position: relative; overflow: hidden;
 }
+.cta-band::after {
+  content: ""; position: absolute; right: -40px; bottom: -50px; width: 260px; height: 200px; opacity: .12;
+  background: var(--mc-gold-500); -webkit-mask: url(/cow.svg) center / contain no-repeat; mask: url(/cow.svg) center / contain no-repeat;
+}
+.cta-band h2 { color: #fff; font-size: clamp(1.5rem, 3vw, 2rem); margin: 0 0 .35rem; }
+.cta-band p { margin: 0; color: rgb(255 255 255 / 80%); }
+.cta-band > * { position: relative; z-index: 1; }
+@media (max-width: 575px) { .cta-band { padding: 1.75rem; } .cta-band .btn { width: 100%; } }
 
-.nav-link.active {
-  font-weight: bold;
-  color: #010101;
-}
-section.hero {padding:40px 0;
-
-}
-section .hero .text{
-    font-weight:800;
-    font-size:48px;
-    line-height:73px;
-    color:#010101;
-
-}
-.buttons {
-    padding-top:30px;
-
-}
-.buttons .btn {
-    font-size:16px;
-    font-weight:bold;
-    line-height: 24px;
-}
-section.setup {
-    padding:100px 0;
-
-}
-section.setup .text-header h3{
-    font-size:42px;
-    font-weight:700;
-    line-height:48px;
-    color: #010101;
-    padding:20px 0;
-}
-section.setup .text-header h3{
-    font-size:18px;
-    font-weight:400;
-    line-height:28px;
-    color: black;
-    padding: 27px 0;
-}
-section.setup .fcons {
-    padding:10px 0;
-
-}
-section.setup .icons img {
-    width: 150px; /* Set the width */
-    height: 150px; /* Set the height */
-    border-radius: 50%; /* Make the image round */
-    object-fit: cover; /* Maintain aspect ratio */
-  }
-section.setup h5 {
-    font-weight:700;
-    font-size:10px;
-    line-height:24px;
-    color:#010101;
-    padding-bottom:18px;
-}
-section.setup .desc p{
-    font-weight: 400;
-    font-size: 13px;
-    line-height:22px;
-    color: #010101;
-    max-width:284px;
-    margin: 0 auto;
-}
-section.information .text.information{
-    padding:50px 0;
-
-}
-section.information h5{
-    font-size:42px;
-    font-weight:700;
-    line-height:48px;
-    color: #010101;
-}
-section.information p{
-    font-size:18px;
-    font-weight:300;
-    line-height:28px;
-    color: #010101;
-    padding-top:20px;
-}
-section.information .info-1{
-    padding:183px 0;
-
-}
-
-section.information .info-1 img,
-section.information .info-2 img {
-    width: 200px; /* Set the width to make the images larger */
-    height: 200px; /* Set the height */
-    border-radius: 12px; /* Adjust the border-radius for a less rounded appearance */
-    object-fit: cover; /* Maintain aspect ratio */
-    position: relative; /* Set the position to relative */
-    z-index: 2; /* Ensure the images appear above other elements */
-    margin-top: -50px; /* Adjust the margin-top to overlap the text */
-}
-
-
-footer {
-    padding-top: 279px;
-    margin-bottom:44px;
-
-}
-footer a{
-    font-weight:bold;
-    font-size:14px;
-    color:#010101;
-    line-height: 18px;
-}
-footer .copy {
-    margin-top: 32px;
-    font-size:14px;
-    color:#d3d3d3;
-    line-height:17px;
-    font-weight:400;
-}
-/* responsiveness */
-@media (max-width:576px){
-    section .hero,
-    section.setup,
-    section.information {
-        text-align:center;
-    }
-    .navbar {
-    padding: 10px 0;
-  }
-
-  .navbar-brand {
-    font-size: 20px; /* Adjust font size */
-  }
-
-  .nav-link {
-    font-size: 14px; /* Adjust font size */
-  }
-   
-    section.hero img {
-        padding-top:2.5rem;
-
-    }
-
-    section.hero .text {
-        font-weight:800;
-        font-size:38px;
-        line-height:53px;
-    }
-   
-    .buttons .btn{
-        display:block;
-        margin: 1rem 0;
-    }
-    .buttons .ms-3{
-        margin-left:0 !important;
-
-    }
-    section.setup{
-        padding: 50px 0;
-
-    }
-    footer {
-        padding-top: 50px;
-        margin-bottom: 44px;
-    }
-
-}
-
+.site-footer { padding: 2rem 0 2.5rem; border-top: 1px solid var(--mc-border); font-size: .92rem; }
+.site-footer a { color: var(--mc-ink-2); font-weight: 600; }
+.site-footer a:hover { color: var(--mc-green-700); }
+.text-muted-2 { color: var(--mc-muted); }
 </style>

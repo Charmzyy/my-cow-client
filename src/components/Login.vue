@@ -1,139 +1,65 @@
 <script setup>
-import { API_URL } from '../config';
 import { ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
+import AuthLayout from './ui/AuthLayout.vue';
+import Icon from './ui/Icon.vue';
+import { api, form, messageFrom } from '../api';
+import { setSession, homePath } from '../auth';
+
 const router = useRouter();
-  let email, password;
-  const rememberMe = ref(false); // Remember Me checkbox value
+const route = useRoute();
+const email = ref('');
+const password = ref('');
+const showPassword = ref(false);
+const loading = ref(false);
+const error = ref('');
 
-  function login() {
-    const formData = new FormData();
-    formData.append('email', email);
-    formData.append('password', password);
-
-    fetch(`${API_URL}/login`, {
-      method: 'POST',
-      body: formData
-    })
-      .then(response => response.json())
-      .then(data => {
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        
-        // check role 
-        if (data.role[0] === "admin") {
-          router.push('/admin/AdminDashboard');
-        } else {
-          router.push('/user/userpost');
-        }
-
-        // If rememberMe is checked, make a request to set remember token
-        if (rememberMe.value) {
-          fetch(`${API_URL}/remember/${data.user.id}/me`, {
-            method: 'POST'
-          })
-            .then(response => response.json())
-            .then(data => {
-              console.log(data.Message); // Log the response
-            })
-            .catch(error => {
-              console.error('Remember Me failed:', error.message);
-              // Handle Remember Me error here
-            });
-        }
-      });
+async function login() {
+  error.value = '';
+  loading.value = true;
+  try {
+    const data = await api('/login', { method: 'POST', body: form({ email: email.value.trim(), password: password.value }) });
+    if (!data?.token) throw new Error(messageFrom(data) || 'Sign in failed. Please try again.');
+    setSession(data);
+    const next = route.query.next;
+    router.push(typeof next === 'string' && next.startsWith('/') && !next.startsWith('//') ? next : homePath());
+  } catch (e) {
+    error.value = e.status === 401 ? 'That email and password don’t match an account.' : e.message;
+  } finally {
+    loading.value = false;
   }
+}
 </script>
 
 <template>
-  <section class="vh-100">
-    <div class="container py-3 py-md-5 h-100">
-      <div class="row d-flex align-items-center justify-content-center h-100">
-        <div class="col-md-8 col-lg-7 col-xl-6">
-          <img src="../assets/logo.png" class="img-fluid" alt="logo">
+  <AuthLayout title="Welcome back" subtitle="Sign in to identify cattle and see your results.">
+    <form novalidate @submit.prevent="login">
+      <div v-if="error" class="mc-alert mc-alert-error" role="alert"><Icon name="alert" :size="18" />{{ error }}</div>
+
+      <div>
+        <label class="form-label" for="login-email">Email address</label>
+        <input id="login-email" v-model="email" type="email" class="form-control" autocomplete="email" inputmode="email" required />
+      </div>
+
+      <div>
+        <div class="d-flex justify-content-between align-items-baseline">
+          <label class="form-label" for="login-password">Password</label>
+          <router-link to="/forgotpassword" class="small fw-semibold">Forgot password?</router-link>
         </div>
-        <div class="col-md-7 col-lg-5 col-xl-5 offset-xl-1">
-          <form>
-            <!-- Email input -->
-            <div class="form-outline mb-3 mb-md-4">
-              <input type="email" id="form1Example13" class="form-control form-control-lg" v-model="email" />
-              <label class="form-label" for="form1Example13">Email address</label>
-            </div>
-
-            <!-- Password input -->
-            <div class="form-outline mb-4">
-              <input type="password" id="form1Example23" class="form-control form-control-lg " v-model="password" />
-              <label class="form-label" for="form1Example23">Password</label>
-            </div>
-
-            <div class="d-flex justify-content-around align-items-center mb-4">
-              <!-- Checkbox -->
-              <!-- Checkbox -->
-<div class="form-check">
-  <input v-model="rememberMe" class="form-check-input" type="checkbox" id="form1Example3" />
-  <label class="form-check-label" for="form1Example3"> Remember me </label>
-</div>
-
-<router-link to="/forgotpassword" class="me-3">Forgot Password</router-link>
-            </div>
-
-            <!-- Submit button -->
-            <button type="submit" class="btn btn-primary btn-lg btn-block" @click.prevent="login">Sign in</button>
-          </form>
+        <div class="input-group-pw">
+          <input id="login-password" v-model="password" :type="showPassword ? 'text' : 'password'" class="form-control" autocomplete="current-password" required />
+          <button type="button" class="pw-toggle" :aria-label="showPassword ? 'Hide password' : 'Show password'" @click="showPassword = !showPassword">
+            <Icon :name="showPassword ? 'eye-off' : 'eye'" :size="20" />
+          </button>
         </div>
       </div>
-    </div>
-  </section>
+
+      <button type="submit" class="btn btn-primary btn-lg w-100" :disabled="loading || !email || !password">
+        <span v-if="loading" class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+        {{ loading ? 'Signing in…' : 'Sign in' }}
+      </button>
+    </form>
+
+    <template #footer>New to MyCow? <router-link to="/register">Create a free account</router-link></template>
+  </AuthLayout>
 </template>
-  
-<style>
-/* Adjust the placeholder height and reduce the gap from the navbar */
-.form-outline {
-  position: relative;
-}
-
-.form-outline input {
-  padding-top: 1.2rem;
-  /* Adjust the top padding for input */
-}
-
-.form-outline label {
-  position: absolute;
-  top: 0.5rem;
-  /* Adjust the label's top position */
-  left: 0;
-  padding: 0.5rem;
-  /* Adjust padding for the label */
-  transition: 0.3s;
-  pointer-events: none;
-  color: #aaa;
-  opacity: 0.5;
-}
-
-.form-outline input:focus~label,
-.form-outline input:valid~label {
-  transform: translateY(-1rem);
-  /* Adjust the label translation */
-  font-size: 0.8rem;
-  color: #6c757d;
-  opacity: 1;
-}
-
-/* Reduce the gap from the navbar */
-.py-3.py-md-5 {
-  padding-top: 1rem;
-  /* Reduce the top padding */
-  padding-bottom: 1rem;
-  /* Reduce the bottom padding */
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .col-xl-5.offset-xl-1 {
-    margin-top: 2rem;
-    /* Adjust the margin-top for smaller screens */
-  }
-}
-</style>
-
-  

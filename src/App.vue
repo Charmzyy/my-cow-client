@@ -1,55 +1,119 @@
 <script setup>
-import { ref } from 'vue';
-import router from './router';
+import { computed } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import Icon from './components/ui/Icon.vue';
+import { auth, clearSession, firstName, homePath } from './auth';
+import { api } from './api';
 
-const userData = ref()
+const route = useRoute();
+const router = useRouter();
 
-userData.value = JSON.parse(localStorage.getItem('user'));
+const navItems = computed(() => {
+  if (auth.isAdmin) {
+    return [
+      { to: '/admin/AdminDashboard', label: 'Overview', icon: 'grid' },
+      { to: '/admin/all/posts', label: 'Review', icon: 'review' },
+      { to: '/admin/certified/cows', label: 'Certified', icon: 'award' },
+      { to: '/admin/all/users', label: 'Users', icon: 'users' },
+    ];
+  }
+  if (auth.isUser) return [{ to: '/user/userpost', label: 'Identify', icon: 'camera' }];
+  return [];
+});
 
-if (!userData.value) router.push('/')
+// Auth pages have their own full-screen layout (with its own logo), so no header there
+const isAuthPage = computed(() => ['Login', 'Register', 'Forgot', 'Reset'].includes(route.name));
 
-
-const logout = async () => {
-  // TODO: logout from server
-
-  localStorage.clear()
-  router.push('/')
-};
-
-
-
+async function logout() {
+  api('/logout', { method: 'POST' }).catch(() => {}); // revoke the token server-side; don't wait for it
+  clearSession();
+  router.push('/');
+}
 </script>
+
 <template>
-  <div>
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
-      <div class="container">
-        <router-link to="/" class="navbar-brand">MyCowApp</router-link>
+  <div class="shell">
+    <header v-if="!isAuthPage" class="topbar">
+      <div class="container topbar-inner">
+        <router-link :to="homePath()" class="brand" aria-label="MyCow home">
+          <span class="mc-mark" aria-hidden="true"></span>
+          <span class="brand-text">MyCow</span>
+        </router-link>
 
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
-          aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-          <span class="navbar-toggler-icon"></span>
-        </button>
+        <nav v-if="navItems.length" class="topnav d-none d-md-flex" aria-label="Main">
+          <router-link v-for="item in navItems" :key="item.to" :to="item.to" class="topnav-link">
+            <Icon :name="item.icon" :size="18" />{{ item.label }}
+          </router-link>
+        </nav>
 
-        <div class="collapse navbar-collapse" id="navbarNav">
-
-
-          <ul class="navbar-nav">
-            <li v-if="userData" class="nav-item">
-              <span class="me-3"> Hello {{ userData?.fullname }}</span>
-            </li>
-
-            <li v-if="userData" class="nav-item">
-              <span @click.prevent="logout">Logout</span>
-            </li>
-          </ul>
+        <div class="topbar-actions">
+          <template v-if="auth.token">
+            <span class="hello d-none d-sm-inline-flex">
+              <Icon name="user" :size="16" />{{ firstName() || 'Account' }}
+              <span v-if="auth.isAdmin" class="mc-chip mc-chip-gold ms-1">Officer</span>
+            </span>
+            <button class="btn btn-outline btn-sm" type="button" @click="logout">
+              <Icon name="logout" :size="16" /><span class="d-none d-sm-inline">Sign out</span>
+            </button>
+          </template>
+          <template v-else>
+            <router-link to="/login" class="btn btn-outline btn-sm">Sign in</router-link>
+            <router-link to="/register" class="btn btn-primary btn-sm d-none d-sm-inline-flex">Get started</router-link>
+          </template>
         </div>
       </div>
-    </nav>
+    </header>
 
-    <main>
-      <section class="hero">
-        <router-view></router-view>
-      </section>
+    <main class="shell-main">
+      <router-view />
     </main>
+
+    <!-- Bottom tab bar on phones: thumb-reachable navigation (admins only; users have one screen) -->
+    <nav v-if="navItems.length > 1" class="tabbar d-md-none" aria-label="Main">
+      <router-link v-for="item in navItems" :key="item.to" :to="item.to" class="tab">
+        <Icon :name="item.icon" :size="22" />
+        <span>{{ item.label }}</span>
+      </router-link>
+    </nav>
   </div>
 </template>
+
+<style>
+.shell { min-height: 100vh; display: flex; flex-direction: column; }
+.shell-main { flex: 1; }
+
+.topbar {
+  position: sticky; top: 0; z-index: 1020;
+  background: rgb(255 255 255 / 92%); backdrop-filter: saturate(1.4) blur(10px);
+  border-bottom: 1px solid var(--mc-border);
+}
+.topbar-inner { display: flex; align-items: center; gap: 1.5rem; min-height: 64px; }
+
+.brand { display: inline-flex; align-items: center; gap: .6rem; color: var(--mc-ink); }
+.brand:hover { color: var(--mc-ink); }
+.brand-text { font-weight: 800; font-size: 1.25rem; letter-spacing: -0.02em; }
+
+.topnav { gap: .25rem; }
+.topnav-link {
+  display: inline-flex; align-items: center; gap: .45rem;
+  padding: .5rem .8rem; border-radius: 10px; color: var(--mc-ink-2); font-weight: 600; font-size: .95rem;
+}
+.topnav-link:hover { color: var(--mc-ink); background: var(--mc-green-50); }
+.topnav-link.router-link-active { color: var(--mc-green-800); background: var(--mc-green-50); }
+
+.topbar-actions { margin-left: auto; display: flex; align-items: center; gap: .6rem; }
+.hello { align-items: center; gap: .35rem; color: var(--mc-ink-2); font-weight: 600; font-size: .92rem; }
+
+.tabbar {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 1020;
+  display: flex; background: var(--mc-surface); border-top: 1px solid var(--mc-border);
+  padding-bottom: env(safe-area-inset-bottom);
+  box-shadow: 0 -4px 16px rgb(28 37 30 / 6%);
+}
+.tab {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: .55rem 0 .5rem; min-height: 60px; color: var(--mc-muted); font-size: .75rem; font-weight: 650;
+}
+.tab.router-link-active { color: var(--mc-green-700); }
+.tab.router-link-active svg { stroke-width: 2.4; }
+</style>
