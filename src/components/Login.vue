@@ -1,4 +1,5 @@
 <script setup>
+import { API_URL } from '../config';
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 const router = useRouter();
@@ -10,7 +11,7 @@ const router = useRouter();
     formData.append('email', email);
     formData.append('password', password);
 
-    fetch('https://my-cow-rest.onrender.com/api/login', {
+    fetch(`${API_URL}/login`, {
       method: 'POST',
       body: formData
     })
@@ -28,7 +29,7 @@ const router = useRouter();
 
         // If rememberMe is checked, make a request to set remember token
         if (rememberMe.value) {
-          fetch(`https://my-cow-rest.onrender.com/api/remember/${data.user.id}/me`, {
+          fetch(`${API_URL}/remember/${data.user.id}/me`, {
             method: 'POST'
           })
             .then(response => response.json())

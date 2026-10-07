@@ -3,7 +3,7 @@
     <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
       <div class="col" v-for="post in posts" :key="post.id">
         <div class="card">
-          <img :src="'https://my-cow-rest.onrender.com/storage/' + post.image" class="post-image" />
+          <img :src="STORAGE_URL + post.image" class="post-image" />
 
           <div class="card-body">
             <p class="card-text">Cow Name: {{ post.cow_name }}</p>
@@ -18,6 +18,7 @@
 </template>
 
 <script setup>
+import { API_URL, STORAGE_URL } from '../../config';
 import { ref, onMounted } from 'vue';
 
 const posts = ref([]);
@@ -29,7 +30,7 @@ const fetchPosts = async () => {
       'Authorization': `Bearer ${token}`,
     };
 
-    const response = await fetch('https://my-cow-rest.onrender.com/api/admin/verified', { headers });
+    const response = await fetch(`${API_URL}/admin/verified`, { headers });
     const data = await response.json();
 
     console.log('Fetched data:', data); // Log the entire response to see its structure

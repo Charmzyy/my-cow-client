@@ -1,4 +1,5 @@
 <script setup>
+import { API_URL } from '../../config';
 import { ref } from 'vue';
 
 const users = ref(null);
@@ -9,7 +10,7 @@ const headers = {
   'Authorization': `Bearer ${token}`,
 };
 
-fetch('https://my-cow-rest.onrender.com/api/admin/users', {
+fetch(`${API_URL}/admin/users`, {
   headers
 })
   .then(response => response.json())
@@ -17,7 +18,7 @@ fetch('https://my-cow-rest.onrender.com/api/admin/users', {
   .catch(error => console.error('Error fetching users:', error));
 
 const deleteUser = (id) => {
-  fetch(`https://my-cow-rest.onrender.com/api/admin/${id}/delete`, {
+  fetch(`${API_URL}/admin/${id}/delete`, {
     method: 'DELETE',
     headers: {
       'Authorization': `Bearer ${token}`,

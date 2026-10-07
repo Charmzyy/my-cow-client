@@ -1,4 +1,5 @@
 <script setup>
+import { API_URL } from '../config';
 import axios from 'axios';
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
@@ -21,7 +22,7 @@ async function post() {
 
   try {
     
-    const response = await axios.post('https://my-cow-rest.onrender.com/api/reset/password', formData, {
+    const response = await axios.post(`${API_URL}/reset/password`, formData, {
       headers: {
         
         'Content-Type': 'multipart/form-data',

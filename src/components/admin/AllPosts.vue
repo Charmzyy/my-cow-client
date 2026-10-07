@@ -3,7 +3,7 @@
     <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
       <div class="col" v-for="post in posts" :key="post.id">
         <div class="card">
-          <img :src="'http://45.55.126.45:8001/storage/' + post.image" class="post-image" />
+          <img :src="STORAGE_URL + post.image" class="post-image" />
 
           <div class="card-body">
             <p class="card-text">Cow Name: {{ post.cow_name }}</p>
@@ -19,6 +19,7 @@
 </template>
 
 <script setup>
+import { API_URL, STORAGE_URL } from '../../config';
 import { ref, onMounted } from 'vue';
 import Swal from 'sweetalert2';
 
@@ -31,7 +32,7 @@ const fetchPosts = async () => {
       'Authorization': `Bearer ${token}`,
     };
 
-    const response = await fetch('http://45.55.126.45:8001/api/admin/unverified', { headers });
+    const response = await fetch(`${API_URL}/admin/unverified`, { headers });
     const data = await response.json();
 
     console.log('Fetched data:', data); // Log the entire response to see its structure
@@ -49,7 +50,7 @@ const certify = async (id) => {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',
     };
-    const response = await fetch(`http://45.55.126.45:8001/api/admin/${id}/accept`, {
+    const response = await fetch(`${API_URL}/admin/${id}/accept`, {
       method: 'PUT',
       headers,
       body: JSON.stringify({ id }),

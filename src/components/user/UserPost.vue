@@ -1,4 +1,5 @@
 <script setup>
+import { API_URL } from '../../config';
 import axios from 'axios';
 import { ref, reactive, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
@@ -41,7 +42,7 @@ async function post() {
 
   try {
     const token = localStorage.getItem('token');
-    const response = await axios.post('https://my-cow-rest.onrender.com/api/mypost', formData, {
+    const response = await axios.post(`${API_URL}/mypost`, formData, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'multipart/form-data',

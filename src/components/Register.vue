@@ -1,4 +1,5 @@
 <script setup>
+import { API_URL } from '../config';
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 const router = useRouter();
@@ -19,7 +20,7 @@ function register() {
     console.log(`${key}: ${value}`);
   }
 
-  fetch('https://my-cow-rest.onrender.com/api/register', {
+  fetch(`${API_URL}/register`, {
     method: 'POST',
     body: formData
   })
