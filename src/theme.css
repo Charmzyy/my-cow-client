@@ -203,6 +203,45 @@ a { text-decoration: none; }
 .mc-meta { font-size: .87rem; color: var(--mc-ink-2); display: flex; flex-direction: column; gap: .15rem; }
 .mc-meta b { color: var(--mc-ink); font-weight: 650; }
 
+/* ---------- Shared page bits ---------- */
+.back-link { display: inline-flex; align-items: center; gap: .35rem; font-weight: 650; color: var(--mc-ink-2); }
+.back-link:hover { color: var(--mc-green-700); }
+.form-select { min-height: 50px; border-radius: var(--mc-radius-sm); border-color: var(--mc-border-strong); }
+.form-select:focus { border-color: var(--mc-green-700); box-shadow: 0 0 0 4px rgb(27 94 55 / 15%); }
+.form-grid { display: grid; gap: 1rem; grid-template-columns: 1fr 1fr; }
+.form-grid .span-2 { grid-column: 1 / -1; }
+.form-grid fieldset { border: 0; padding: 0; margin: 0; }
+@media (max-width: 575px) { .form-grid { grid-template-columns: 1fr; } }
+.req { color: var(--mc-ochre-600); }
+.form-actions { display: flex; justify-content: space-between; gap: .75rem; margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--mc-border); }
+/* Big tappable radio choices */
+.choice-row { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
+.choice {
+  display: flex; align-items: center; justify-content: center; min-height: 50px; padding: .5rem; text-align: center;
+  border: 1.5px solid var(--mc-border-strong); border-radius: var(--mc-radius-sm); cursor: pointer; font-weight: 650; background: var(--mc-surface);
+}
+.choice.on { border-color: var(--mc-green-700); background: var(--mc-green-50); color: var(--mc-green-800); }
+.choice:focus-within { outline: 3px solid var(--mc-gold-500); outline-offset: 2px; }
+
+/* Segmented control (tabs / decision picker) */
+.seg { display: inline-flex; gap: .25rem; padding: .25rem; background: #ece8dc; border-radius: 12px; flex-wrap: wrap; }
+.seg button { border: 0; background: transparent; padding: .5rem .9rem; border-radius: 9px; font-weight: 650; color: var(--mc-ink-2); min-height: 40px; }
+.seg button.on { background: var(--mc-surface); color: var(--mc-ink); box-shadow: var(--mc-shadow); }
+.seg-count { display: inline-block; min-width: 1.5em; padding: 0 .35em; margin-left: .25rem; border-radius: 999px; background: rgb(28 37 30 / 8%); font-size: .8rem; }
+
+/* Record detail sections (animal profile + officer review) */
+.details { padding: 1.1rem 1.25rem; box-shadow: none; }
+.details h2 { margin-bottom: .75rem; }
+.details dl { margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: .65rem 1.5rem; }
+.details dt { font-size: .8rem; font-weight: 600; color: var(--mc-muted); }
+.details dd { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+.ai-breed { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; }
+.ai-diff { color: #6b4700; display: flex; gap: .3rem; align-items: flex-start; }
+@media (min-width: 992px) { .side-stick { position: sticky; top: 84px; } }
+.filters { display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; padding: .85rem; margin-bottom: 1.5rem; box-shadow: none; }
+.filters-search { flex: 1 1 240px; }
+.filters-count { margin-left: auto; color: var(--mc-muted); font-size: .9rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+
 /* SweetAlert2 dialogs in brand colours */
 .swal2-popup { border-radius: var(--mc-radius) !important; font-family: var(--mc-font) !important; }
 .swal2-styled.swal2-confirm { background: var(--mc-green-700) !important; border-radius: var(--mc-radius-sm) !important; }

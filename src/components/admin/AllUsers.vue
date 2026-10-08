@@ -4,7 +4,7 @@ import Swal from 'sweetalert2';
 import Icon from '../ui/Icon.vue';
 import EmptyState from '../ui/EmptyState.vue';
 import { api, apiList } from '../../api';
-import { auth } from '../../auth';
+import { auth, roleLabel } from '../../auth';
 
 const users = ref([]);
 const loading = ref(true);
@@ -39,7 +39,7 @@ async function load() {
 async function remove(user) {
   const { isConfirmed } = await Swal.fire({
     icon: 'warning',
-    title: `Delete ${displayName(user)}?`,
+    titleText: `Delete ${displayName(user)}?`,
     text: 'Their account and all of their cow submissions will be permanently removed.',
     showCancelButton: true,
     confirmButtonText: 'Delete user',
@@ -86,7 +86,7 @@ onMounted(load);
           <div class="user-main">
             <div class="d-flex align-items-center gap-2 flex-wrap">
               <strong>{{ displayName(u) }}</strong>
-              <span v-if="u.role == 1" class="mc-chip mc-chip-gold">Officer</span>
+              <span v-if="u.role && u.role !== 'farmer'" class="mc-chip mc-chip-gold">{{ roleLabel(u.role) }}</span>
               <span v-if="u.id === auth.user?.id" class="mc-chip mc-chip-ink">You</span>
             </div>
             <span class="user-email">{{ u.email }}</span>

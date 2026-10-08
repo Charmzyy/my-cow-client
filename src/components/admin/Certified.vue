@@ -83,9 +83,3 @@ onMounted(load);
   </div>
 </template>
 
-<style>
-.filters { display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; padding: .85rem; margin-bottom: 1.5rem; box-shadow: none; }
-.filters-search { flex: 1 1 240px; }
-.filters .form-select { min-height: 50px; border-radius: var(--mc-radius-sm); border-color: var(--mc-border-strong); }
-.filters-count { margin-left: auto; color: var(--mc-muted); font-size: .9rem; font-weight: 600; font-variant-numeric: tabular-nums; }
-</style>

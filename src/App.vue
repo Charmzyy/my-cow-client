@@ -1,8 +1,8 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import Icon from './components/ui/Icon.vue';
-import { auth, clearSession, firstName, homePath } from './auth';
+import { auth, clearSession, firstName, homePath, refreshSession, roleLabel } from './auth';
 import { api } from './api';
 
 const route = useRoute();
@@ -12,13 +12,33 @@ const navItems = computed(() => {
   if (auth.isAdmin) {
     return [
       { to: '/admin/AdminDashboard', label: 'Overview', icon: 'grid' },
-      { to: '/admin/all/posts', label: 'Review', icon: 'review' },
-      { to: '/admin/certified/cows', label: 'Certified', icon: 'award' },
+      { to: '/admin/requests', label: 'Requests', icon: 'review' },
+      { to: '/admin/officers', label: 'Officers', icon: 'shield' },
+      { to: '/admin/all/posts', label: 'Quick checks', icon: 'camera' },
       { to: '/admin/all/users', label: 'Users', icon: 'users' },
     ];
   }
-  if (auth.isUser) return [{ to: '/user/userpost', label: 'Identify', icon: 'camera' }];
+  if (auth.isOfficer) {
+    return [{ to: '/officer', label: 'My queue', icon: 'review' }];
+  }
+  if (auth.isFarmer) {
+    return [
+      { to: '/herd', label: 'My herd', icon: 'herd' },
+      { to: '/farms', label: 'Farms', icon: 'pin' },
+      { to: '/user/userpost', label: 'Quick check', icon: 'camera' },
+    ];
+  }
   return [];
+});
+
+// Pick up role changes made on the server (e.g. officer application approved) on every app start
+onMounted(async () => {
+  if (!auth.token) return;
+  try {
+    if (refreshSession(await api('/me'))) router.replace(homePath());
+  } catch {
+    /* offline: keep the saved session */
+  }
 });
 
 // Auth pages have their own full-screen layout (with its own logo), so no header there
@@ -50,13 +70,14 @@ async function logout() {
           <template v-if="auth.token">
             <span class="hello d-none d-sm-inline-flex">
               <Icon name="user" :size="16" />{{ firstName() || 'Account' }}
-              <span v-if="auth.isAdmin" class="mc-chip mc-chip-gold ms-1">Officer</span>
+              <span v-if="auth.role && !auth.isFarmer" class="mc-chip mc-chip-gold ms-1">{{ roleLabel() }}</span>
             </span>
             <button class="btn btn-outline btn-sm" type="button" @click="logout">
               <Icon name="logout" :size="16" /><span class="d-none d-sm-inline">Sign out</span>
             </button>
           </template>
           <template v-else>
+            <router-link to="/verify" class="btn btn-sm btn-link d-none d-sm-inline-flex"><Icon name="shield" :size="16" />Verify a certificate</router-link>
             <router-link to="/login" class="btn btn-outline btn-sm">Sign in</router-link>
             <router-link to="/register" class="btn btn-primary btn-sm d-none d-sm-inline-flex">Get started</router-link>
           </template>
@@ -68,7 +89,7 @@ async function logout() {
       <router-view />
     </main>
 
-    <!-- Bottom tab bar on phones: thumb-reachable navigation (admins only; users have one screen) -->
+    <!-- Bottom tab bar on phones: thumb-reachable navigation whenever there's more than one section -->
     <nav v-if="navItems.length > 1" class="tabbar d-md-none" aria-label="Main">
       <router-link v-for="item in navItems" :key="item.to" :to="item.to" class="tab">
         <Icon :name="item.icon" :size="22" />

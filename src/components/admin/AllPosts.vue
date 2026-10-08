@@ -35,7 +35,7 @@ async function certify(post) {
   try {
     await api(`/admin/${post.id}/accept`, { method: 'PUT', body: { id: post.id } });
     removeFromQueue(post.id);
-    toast.fire({ icon: 'success', title: `${post.cow_name} certified as ${breedLabel(post.predicted_class)}` });
+    toast.fire({ icon: 'success', titleText: `${post.cow_name} certified as ${breedLabel(post.predicted_class)}` });
   } catch (e) {
     Swal.fire({ icon: 'error', title: 'Couldn’t certify', text: e.message });
     load(); // the server may have saved it before failing (e.g. sending the email)
@@ -46,7 +46,7 @@ async function certify(post) {
 
 async function reject(post) {
   const { isConfirmed, value: reason } = await Swal.fire({
-    title: `Reject ${post.cow_name}?`,
+    titleText: `Reject ${post.cow_name}?`,
     input: 'textarea',
     inputLabel: 'Tell the farmer why (they’ll receive this by email)',
     inputPlaceholder: 'e.g. Photo is blurry. Please retake it side-on in daylight.',
@@ -61,7 +61,7 @@ async function reject(post) {
   try {
     await api(`/admin/${post.id}/reject`, { method: 'PUT', body: { reason: reason.trim() } });
     removeFromQueue(post.id);
-    toast.fire({ icon: 'info', title: `${post.cow_name} rejected` });
+    toast.fire({ icon: 'info', titleText: `${post.cow_name} rejected` });
   } catch (e) {
     Swal.fire({ icon: 'error', title: 'Couldn’t reject', text: e.message });
     load();

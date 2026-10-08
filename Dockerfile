@@ -1,7 +1,8 @@
 # ---------------------------------------------------------------------------
 # my-cow-client: Vue/Vite SPA. Multi-stage: Node builds it, nginx serves it.
-# Build:  docker build -t cow-client:dev --build-arg VITE_API_URL=http://localhost:8001/api .
-# VITE_* values are BAKED INTO the JS at build time. To change the API URL, rebuild.
+# Build:  docker build -t cow-client:dev .
+# The app calls /api and /storage on its OWN address; nginx forwards those to Laravel
+# (API_UPSTREAM, set at run time). So the same image works on any host/IP: no rebuild per network.
 # ---------------------------------------------------------------------------
 
 # ---- Stage 1: build (Node exists only here, never in the final image) ----
@@ -14,16 +15,19 @@ RUN npm ci
 
 COPY . .
 
-# ARG = build-time variable; ENV makes it visible to `npm run build` (Vite reads VITE_*)
-ARG VITE_API_URL=http://localhost:8001/api
-ARG VITE_STORAGE_URL=http://localhost:8001/storage/
+# Relative URLs by default (same origin, via the nginx proxy). Override only if the API
+# lives on a different domain, e.g. --build-arg VITE_API_URL=https://api.example.com/api
+ARG VITE_API_URL=/api
+ARG VITE_STORAGE_URL=/storage/
 ENV VITE_API_URL=$VITE_API_URL \
     VITE_STORAGE_URL=$VITE_STORAGE_URL
 RUN npm run build
 
-# ---- Stage 2: serve static files ----
+# ---- Stage 2: serve static files + proxy /api ----
 FROM nginx:1.27-alpine
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Where Laravel is reachable from this container. Default = the "app" service in the same compose stack.
+ENV API_UPSTREAM=http://app:8001
+COPY nginx.conf.template /etc/nginx/templates/default.conf.template
 COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 80
-# CMD is inherited from the nginx image (nginx -g 'daemon off;')
+# CMD is inherited from the nginx image (nginx -g 'daemon off;'); its entrypoint renders the template

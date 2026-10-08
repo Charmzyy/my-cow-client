@@ -4,8 +4,7 @@ import Icon from '../ui/Icon.vue';
 import { api, form, messageFrom } from '../../api';
 import { firstName } from '../../auth';
 import { BREEDS, NOT_A_COW, breedLabel, confidenceLevel, formatPct } from '../../breeds';
-
-const MAX_UPLOAD_MB = 4; // matches the API's max:4096 (KB) rule
+import { MAX_UPLOAD_MB, preparePhoto } from '../../image';
 
 const cowName = ref('');
 const file = ref(null);
@@ -16,43 +15,17 @@ const error = ref('');
 const result = ref(null);
 const resultEl = ref(null);
 
+const locked = computed(() => loading.value || !!result.value);
 const isCow = computed(() => result.value && result.value.predictedClass && result.value.predictedClass !== NOT_A_COW);
 const level = computed(() => confidenceLevel(result.value?.confidence));
 const breedInfo = computed(() => BREEDS[result.value?.predictedClass] || null);
 
-// Phone photos are often 3–8 MB. Downscale to 1280px JPEG before upload: much less mobile data,
-// and PNGs with transparency become plain RGB (which the model expects).
-async function shrink(original, maxSide = 1280) {
-  if (!/^image\/(jpeg|png|webp|bmp)$/.test(original.type)) return original;
-  try {
-    const bitmap = await createImageBitmap(original);
-    const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
-    if (scale === 1 && original.type === 'image/jpeg' && original.size < 1.5 * 1024 * 1024) return original;
-    const canvas = document.createElement('canvas');
-    canvas.width = Math.round(bitmap.width * scale);
-    canvas.height = Math.round(bitmap.height * scale);
-    const ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-    const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.85));
-    if (!blob) return original;
-    return new File([blob], original.name.replace(/\.\w+$/, '') + '.jpg', { type: 'image/jpeg' });
-  } catch {
-    return original;
-  }
-}
-
 async function pick(selected) {
+  if (locked.value) return;
   error.value = '';
-  if (!selected) return;
-  if (!selected.type.startsWith('image/')) {
-    error.value = 'Please choose a photo (JPG or PNG).';
-    return;
-  }
-  const ready = await shrink(selected);
-  if (ready.size > MAX_UPLOAD_MB * 1024 * 1024) {
-    error.value = `That photo is too large. Please use one under ${MAX_UPLOAD_MB} MB.`;
+  const { file: ready, error: problem } = await preparePhoto(selected);
+  if (!ready) {
+    error.value = problem;
     return;
   }
   if (previewUrl.value) URL.revokeObjectURL(previewUrl.value);
@@ -71,6 +44,9 @@ function onDrop(e) {
 }
 
 async function identify() {
+  // One request per photo: ignore taps while sending, and once a result is showing
+  // the form stays locked until "Identify another cow" resets it.
+  if (loading.value || result.value) return;
   if (!file.value) {
     error.value = 'Add a photo of the cow first.';
     return;
@@ -115,8 +91,11 @@ onBeforeUnmount(() => previewUrl.value && URL.revokeObjectURL(previewUrl.value))
     <div class="container">
       <header class="mc-page-head">
         <span class="mc-eyebrow">{{ firstName() ? `Hello, ${firstName()}` : 'Welcome' }}</span>
-        <h1>Identify a cow</h1>
-        <p>Take a clear photo of one animal. We’ll tell you the most likely breed, then an officer reviews it.</p>
+        <h1>Quick breed check</h1>
+        <p>
+          Free: one photo, an instant AI breed guess. For a certificate, <router-link to="/herd/new">register the animal</router-link>
+          with its full record and photos instead.
+        </p>
       </header>
 
       <div class="row g-4">
@@ -125,15 +104,15 @@ onBeforeUnmount(() => previewUrl.value && URL.revokeObjectURL(previewUrl.value))
           <form class="mc-card p-3 p-sm-4" novalidate @submit.prevent="identify">
             <label
               class="dropzone"
-              :class="{ dragging, filled: previewUrl }"
-              @dragover.prevent="dragging = true"
+              :class="{ dragging, filled: previewUrl, locked }"
+              @dragover.prevent="dragging = !locked"
               @dragleave.prevent="dragging = false"
               @drop.prevent="onDrop"
             >
-              <input type="file" accept="image/*" class="visually-hidden" @change="onFileChange" :disabled="loading" />
+              <input type="file" accept="image/*" class="visually-hidden" @change="onFileChange" :disabled="locked" />
               <template v-if="previewUrl">
                 <img :src="previewUrl" alt="Selected cow photo" class="dropzone-preview" />
-                <span class="dropzone-change"><Icon name="refresh" :size="16" /> Change photo</span>
+                <span v-if="!locked" class="dropzone-change"><Icon name="refresh" :size="16" /> Change photo</span>
               </template>
               <template v-else>
                 <span class="dropzone-icon"><Icon name="camera" :size="30" /></span>
@@ -145,12 +124,15 @@ onBeforeUnmount(() => previewUrl.value && URL.revokeObjectURL(previewUrl.value))
 
             <div class="mt-4">
               <label class="form-label" for="cow-name">Cow name or tag number</label>
-              <input id="cow-name" v-model="cowName" type="text" class="form-control" placeholder="e.g. Neema or KE-0425" maxlength="80" :disabled="loading" />
+              <input id="cow-name" v-model="cowName" type="text" class="form-control" placeholder="e.g. Neema or KE-0425" maxlength="80" :disabled="locked" />
             </div>
 
             <div v-if="error" class="mc-alert mc-alert-error mt-3" role="alert"><Icon name="alert" :size="18" />{{ error }}</div>
 
-            <button type="submit" class="btn btn-primary btn-lg w-100 mt-4" :disabled="loading">
+            <button v-if="result" type="button" class="btn btn-outline btn-lg w-100 mt-4" @click="startOver">
+              <Icon name="camera" :size="20" /> Identify another cow
+            </button>
+            <button v-else type="submit" class="btn btn-primary btn-lg w-100 mt-4" :disabled="loading">
               <span v-if="loading" class="spinner-border spinner-border-sm" aria-hidden="true"></span>
               <Icon v-else name="sprout" :size="20" />
               {{ loading ? 'Analysing photo…' : 'Identify breed' }}
@@ -205,6 +187,10 @@ onBeforeUnmount(() => previewUrl.value && URL.revokeObjectURL(previewUrl.value))
               </p>
             </div>
 
+            <div v-if="result.duplicate" class="px-4 pb-3">
+              <div class="mc-alert mc-alert-info"><Icon name="clock" :size="18" />You already sent this photo, so this is the earlier result. No new submission was created.</div>
+            </div>
+
             <div class="result-foot">
               <button type="button" class="btn btn-outline w-100" @click="startOver">
                 <Icon name="camera" :size="18" /> Identify another cow
@@ -237,6 +223,7 @@ onBeforeUnmount(() => previewUrl.value && URL.revokeObjectURL(previewUrl.value))
 .dropzone:hover, .dropzone.dragging { border-color: var(--mc-green-700); background: var(--mc-green-50); }
 .dropzone:focus-within { outline: 3px solid var(--mc-gold-500); outline-offset: 2px; }
 .dropzone.filled { padding: 0; border-style: solid; background: #000; min-height: 0; }
+.dropzone.locked { cursor: default; }
 .dropzone-icon { width: 64px; height: 64px; border-radius: 18px; display: grid; place-items: center; background: var(--mc-green-700); color: #fff; margin-bottom: .5rem; }
 .dropzone-title { font-size: 1.1rem; }
 .dropzone-sub { color: var(--mc-ink-2); }

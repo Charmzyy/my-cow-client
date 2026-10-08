@@ -46,13 +46,39 @@ export async function api(path, { method = 'GET', body } = {}) {
       clearSession();
       window.location.assign('/login');
     }
-    if (res.status >= 500) {
+    // 500 = unexpected crash: hide the details. 503 etc. carry a message meant for people.
+    if (res.status === 500 || (res.status > 500 && !messageFrom(data))) {
       console.error(`API ${method} ${path} failed`, data);
       throw new ApiError('Something went wrong on our side. Please try again in a moment.', res.status, data);
     }
     throw new ApiError(messageFrom(data) || `Request failed (${res.status}).`, res.status, data);
   }
   return data;
+}
+
+// Download a file (e.g. a certificate PDF) that needs the auth token, so a plain <a href> won't do.
+export async function apiDownload(path, filename) {
+  const headers = { Accept: 'application/json' }; // errors still come back as JSON
+  if (auth.token) headers.Authorization = `Bearer ${auth.token}`;
+
+  let res;
+  try {
+    res = await fetch(`${API_URL}${path}`, { headers });
+  } catch {
+    throw new ApiError("Can't reach the server. Check your internet connection and try again.", 0);
+  }
+  if (!res.ok) {
+    const data = await res.json().catch(() => null);
+    if (res.status >= 500) console.error(`Download ${path} failed`, data);
+    throw new ApiError(res.status >= 500 ? 'Something went wrong on our side. Please try again in a moment.' : messageFrom(data) || `Download failed (${res.status}).`, res.status, data);
+  }
+
+  const url = URL.createObjectURL(await res.blob());
+  const a = Object.assign(document.createElement('a'), { href: url, download: filename });
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
 }
 
 // The admin list endpoints answer 404 when a list is empty; treat that as "no items".

@@ -1,9 +1,12 @@
-version: '3.8'
-
+# DEV compose for the client on its own: nginx serves the built Vue app on port 80 inside the container
+# and forwards /api + /storage to the Laravel container published on the host's port 8001.
+#   docker compose up -d --build      then open http://localhost:8080
 services:
   client:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    build: .
+    image: cow-client:dev
+    environment:
+      API_UPSTREAM: http://host.docker.internal:8001   # Laravel from my-cow-rest's compose
     ports:
-      - "5173:5173"
+      - "8080:80"
+    restart: unless-stopped

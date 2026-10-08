@@ -1,0 +1,42 @@
+# Template: the nginx image fills in ${API_UPSTREAM} from the environment at container start
+# (files in /etc/nginx/templates/ → /etc/nginx/conf.d/). nginx's own $variables are left alone.
+#
+# The browser only ever talks to THIS server: the Vue app at /, and /api + /storage are
+# forwarded to Laravel. Same origin means no CORS, and no IP/host baked into the JS, so the
+# one image works on localhost, a LAN IP, a phone hotspot or a real domain.
+server {
+    listen 80;
+    root /usr/share/nginx/html;
+    index index.html;
+
+    client_max_body_size 10m;   # photo uploads (the app shrinks them to well under this)
+
+    location /api/ {
+        proxy_pass ${API_UPSTREAM};
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 60s;   # a breed prediction can take a few seconds on a small CPU
+    }
+
+    # Uploaded cow photos, served by Laravel from storage/app/public
+    location /storage/ {
+        proxy_pass ${API_UPSTREAM};
+        proxy_set_header Host $host;
+        expires 7d;
+    }
+
+    # Vue Router uses history mode: /herd/123 isn't a real file, so fall back to index.html.
+    # index.html must never be cached: it names the current build's JS/CSS files, so a cached
+    # copy keeps people on the old app after a deploy.
+    location / {
+        try_files $uri $uri/ /index.html;
+        add_header Cache-Control "no-cache";
+    }
+
+    # Hashed build assets never change, so let browsers cache them
+    location /assets/ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+}
