@@ -3,8 +3,8 @@ import { reactive } from 'vue';
 // One reactive source of truth for "who is signed in", so the header, tab bar and
 // router guards all update the moment someone logs in or out.
 
-// Roles match the API: farmer | officer | org_admin | admin
-export const ROLES = ['farmer', 'officer', 'org_admin', 'admin'];
+// Roles match the API: farmer | officer | org_admin | admin | worker (farm hand, phone + PIN account)
+export const ROLES = ['farmer', 'officer', 'org_admin', 'admin', 'worker'];
 
 // Older API versions / saved sessions used 1 / 0 and 'user'
 function normaliseRole(role) {
@@ -46,6 +46,9 @@ export const auth = reactive({
   get isOfficer() {
     return !!this.token && this.role === 'officer';
   },
+  get isWorker() {
+    return !!this.token && this.role === 'worker';
+  },
 });
 
 // Accepts the /login response ({ token, user, role: ['admin'] }) or the /register one ({ token, user }).
@@ -77,7 +80,7 @@ export function clearSession() {
 export function homePath() {
   if (auth.isAdmin) return '/admin/AdminDashboard';
   if (auth.isOfficer) return '/officer';
-  if (auth.isFarmer) return '/herd';
+  if (auth.isFarmer || auth.isWorker) return '/herd';
   return '/';
 }
 
@@ -91,7 +94,7 @@ export function refreshSession({ user, role }) {
 }
 
 export function roleLabel(role = auth.role) {
-  return { farmer: 'Farmer', officer: 'Officer', org_admin: 'Organisation', admin: 'Admin' }[role] || '';
+  return { farmer: 'Farmer', officer: 'Officer', org_admin: 'Organisation', admin: 'Admin', worker: 'Farm worker' }[role] || '';
 }
 
 export function firstName() {

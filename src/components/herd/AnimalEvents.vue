@@ -1,18 +1,22 @@
 <script setup>
-// An animal's health / breeding / growth log. The owner adds and removes entries;
-// officers see the same list read-only (pass `events` + `readonly`).
+// An animal's health / breeding / growth log. Everyone on the farm's team adds entries; owners and
+// managers (canManage) remove any, others only their own. Officers see it read-only (`events` + `readonly`).
 import { computed, onMounted, reactive, ref } from 'vue';
 import Swal from 'sweetalert2';
 import Icon from '../ui/Icon.vue';
 import { api } from '../../api';
 import { formatDate } from '../../requests';
+import { auth } from '../../auth';
 
 const props = defineProps({
   animalId: { type: String, required: true },
   sex: { type: String, default: '' },
   events: { type: Array, default: null },   // given = don't fetch
   readonly: { type: Boolean, default: false },
+  canManage: { type: Boolean, default: true },
 });
+
+const canRemove = (ev) => !props.readonly && (props.canManage || ev.recorded_by === auth.user?.id);
 
 // Matches AnimalEvent::TYPES on the API
 const TYPES = {
@@ -131,7 +135,7 @@ onMounted(load);
           <span v-if="ev.notes" class="ev-notes">{{ ev.notes }}</span>
         </span>
         <span class="ev-date">{{ formatDate(ev.event_date) }}</span>
-        <button v-if="!readonly" class="btn btn-sm ev-del" :aria-label="`Delete ${TYPES[ev.type]?.label} record`" @click="remove(ev)">
+        <button v-if="canRemove(ev)" class="btn btn-sm ev-del" :aria-label="`Delete ${TYPES[ev.type]?.label} record`" @click="remove(ev)">
           <Icon name="trash" :size="15" />
         </button>
       </li>

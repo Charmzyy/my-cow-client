@@ -8,6 +8,7 @@ import CertificationCard from './CertificationCard.vue';
 import AnimalEvents from './AnimalEvents.vue';
 import MapView from '../ui/MapView.vue';
 import { hasPoint } from '../../geo';
+import { auth } from '../../auth';
 import { api } from '../../api';
 import { BREEDS, breedLabel, confidenceLevel, formatPct } from '../../breeds';
 import { SEXES, ageText, displayName, recordSections } from '../../animals';
@@ -15,6 +16,7 @@ import { SEXES, ageText, displayName, recordSections } from '../../animals';
 const route = useRoute();
 const router = useRouter();
 const animal = ref(null);
+const can = ref([]);            // what this person may do here (API: AnimalPolicy::abilities)
 const loading = ref(true);
 const error = ref('');
 const justCreated = computed(() => route.query.new === '1');
@@ -26,7 +28,9 @@ async function load(silent = false) {
   if (!silent) loading.value = true;
   error.value = '';
   try {
-    animal.value = (await api(`/animals/${route.params.id}`)).animal;
+    const data = await api(`/animals/${route.params.id}`);
+    animal.value = data.animal;
+    can.value = data.can || [];
   } catch (e) {
     error.value = e.status === 404 || e.status === 403 ? 'This animal doesn’t exist or isn’t in your herd.' : e.message;
   } finally {
@@ -59,7 +63,7 @@ onMounted(load);
 <template>
   <div class="mc-page">
     <div class="container">
-      <router-link to="/herd" class="back-link"><Icon name="arrow-left" :size="16" /> My herd</router-link>
+      <router-link to="/herd" class="back-link"><Icon name="arrow-left" :size="16" /> {{ auth.isWorker ? 'Herd' : 'My herd' }}</router-link>
 
       <div v-if="loading" class="mc-skeleton mt-3" style="height: 480px"></div>
       <div v-else-if="error" class="mc-alert mc-alert-error mt-3" role="alert"><Icon name="alert" :size="18" />{{ error }}</div>
@@ -71,7 +75,7 @@ onMounted(load);
             <h1>{{ displayName(animal) }}</h1>
             <p>{{ SEXES[animal.sex] }} · {{ ageText(animal) }}<template v-if="animal.county"> · {{ animal.county.name }}</template></p>
           </div>
-          <div class="d-flex gap-2">
+          <div v-if="can.includes('update')" class="d-flex gap-2">
             <router-link :to="`/herd/${animal.id}/edit`" class="btn btn-outline btn-sm"><Icon name="edit" :size="16" /> Edit details</router-link>
             <button class="btn btn-danger-soft btn-sm" aria-label="Remove animal" @click="removeAnimal"><Icon name="trash" :size="16" /></button>
           </div>
@@ -88,14 +92,14 @@ onMounted(load);
               <div class="d-flex justify-content-between align-items-end mb-3">
                 <div>
                   <h2 class="h5 mb-1">Photos</h2>
-                  <p class="text-secondary small mb-0">Take each one in daylight, with the animal standing still.</p>
+                  <p v-if="can.includes('update')" class="text-secondary small mb-0">Take each one in daylight, with the animal standing still.</p>
                 </div>
                 <span class="text-secondary small">{{ animal.photos.length }} taken</span>
               </div>
-              <PhotoSlots :animal="animal" @updated="animal = $event" />
+              <PhotoSlots :animal="animal" :editable="can.includes('update')" @updated="animal = $event" />
             </section>
 
-            <AnimalEvents :animal-id="animal.id" :sex="animal.sex" />
+            <AnimalEvents :animal-id="animal.id" :sex="animal.sex" :readonly="!can.includes('log_event')" :can-manage="can.includes('update')" />
 
             <section v-for="s in sections" :key="s.title" class="mc-card details mb-3">
               <h2 class="h6">{{ s.title }}</h2>
@@ -126,7 +130,7 @@ onMounted(load);
                 <p v-else class="small text-secondary mt-1 mb-0">Add a side photo and the AI will suggest the breed.</p>
               </section>
 
-              <CertificationCard :animal="animal" @changed="load(true)" />
+              <CertificationCard v-if="can.includes('certify')" :animal="animal" @changed="load(true)" />
 
               <section class="mc-card p-3 mt-3">
                 <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
@@ -135,7 +139,7 @@ onMounted(load);
                     <p class="fw-bold mb-0">{{ animal.holding?.name || animal.village || '—' }}</p>
                     <p class="small text-secondary mb-0">{{ [animal.village, animal.sub_county, animal.county?.name].filter(Boolean).join(', ') }}</p>
                   </div>
-                  <router-link to="/farms" class="btn btn-outline btn-sm flex-none">Farms</router-link>
+                  <router-link v-if="!auth.isWorker" to="/farms" class="btn btn-outline btn-sm flex-none">Farms</router-link>
                 </div>
                 <MapView v-if="hasPoint(animal)" :key="`${animal.latitude},${animal.longitude}`" :latitude="animal.latitude" :longitude="animal.longitude" height="170px" />
                 <p v-else class="small text-secondary mb-0">No map pin yet. Add one under Farms so an officer can find you.</p>

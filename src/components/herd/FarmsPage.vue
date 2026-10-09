@@ -8,7 +8,7 @@ import MapView from '../ui/MapView.vue';
 import FarmFields from './FarmFields.vue';
 import { api } from '../../api';
 import { hasPoint } from '../../geo';
-import { blankFarm, farmPlace, saveFarm } from '../../farms';
+import { FARM_ROLES, blankFarm, canManageFarm, farmPlace, saveFarm } from '../../farms';
 
 const farms = ref([]);
 const loading = ref(true);
@@ -75,7 +75,7 @@ onMounted(load);
         <div>
           <span class="mc-eyebrow">My herd</span>
           <h1>Farms</h1>
-          <p>Where your animals are kept. Officers use the pin to find the farm for a visit; it’s never shown publicly.</p>
+          <p>Where your animals are kept, and who works on each farm. Officers use the pin to find the farm for a visit; it’s never shown publicly.</p>
         </div>
         <button v-if="!editing" class="btn btn-primary btn-sm" @click="edit(null)"><Icon name="plus" :size="16" /> Add farm</button>
       </header>
@@ -101,16 +101,17 @@ onMounted(load);
           <section class="mc-card p-3 h-100 d-flex flex-column">
             <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
               <div>
-                <h2 class="h6 mb-1">{{ farm.name }}</h2>
+                <h2 class="h6 mb-1">{{ farm.name }} <span v-if="farm.my_role && farm.my_role !== 'owner'" class="mc-chip mc-chip-ink ms-1">{{ FARM_ROLES[farm.my_role] }}</span></h2>
                 <p class="small text-secondary mb-0">{{ farmPlace(farm) || '—' }} · {{ farm.animals_count }} animal{{ farm.animals_count === 1 ? '' : 's' }}</p>
               </div>
-              <div class="d-flex gap-1 flex-none">
+              <div v-if="canManageFarm(farm)" class="d-flex gap-1 flex-none">
+                <router-link :to="`/farms/${farm.id}/team`" class="btn btn-outline btn-sm" :aria-label="`Team of ${farm.name}`"><Icon name="users" :size="15" /> Team</router-link>
                 <button class="btn btn-outline btn-sm" :aria-label="`Edit ${farm.name}`" @click="edit(farm)"><Icon name="edit" :size="15" /></button>
-                <button v-if="!farm.animals_count" class="btn btn-danger-soft btn-sm" :aria-label="`Remove ${farm.name}`" @click="remove(farm)"><Icon name="trash" :size="15" /></button>
+                <button v-if="!farm.animals_count && farm.my_role === 'owner'" class="btn btn-danger-soft btn-sm" :aria-label="`Remove ${farm.name}`" @click="remove(farm)"><Icon name="trash" :size="15" /></button>
               </div>
             </div>
             <MapView v-if="hasPoint(farm)" :key="`${farm.latitude},${farm.longitude}`" :latitude="farm.latitude" :longitude="farm.longitude" height="170px" />
-            <button v-else class="btn btn-outline btn-sm mt-auto" @click="edit(farm)"><Icon name="pin" :size="15" /> Add the map pin</button>
+            <button v-else-if="canManageFarm(farm)" class="btn btn-outline btn-sm mt-auto" @click="edit(farm)"><Icon name="pin" :size="15" /> Add the map pin</button>
           </section>
         </div>
       </div>

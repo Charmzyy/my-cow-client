@@ -9,7 +9,7 @@ import { getCounties } from '../../lookups';
 import { BREEDS, breedLabel } from '../../breeds';
 import { PURPOSES } from '../../animals';
 import FarmFields from './FarmFields.vue';
-import { blankFarm, farmPlace, saveFarm } from '../../farms';
+import { blankFarm, canManageFarm, farmPlace, saveFarm } from '../../farms';
 
 const route = useRoute();
 const router = useRouter();
@@ -79,7 +79,8 @@ function discardDraft() {
 
 onMounted(async () => {
   getCounties().then((c) => (counties.value = c)).catch(() => (error.value = 'Couldn’t load the county list. Check your connection.'));
-  const farmsLoaded = api('/holdings').then((r) => (farms.value = r.holdings)).catch(() => (farms.value = []));
+  // Only farms this person may add animals to (owner / manager), not ones they just work on
+  const farmsLoaded = api('/holdings').then((r) => (farms.value = r.holdings.filter(canManageFarm))).catch(() => (farms.value = []));
   if (editId.value) {
     try {
       const { animal } = await api(`/animals/${editId.value}`);

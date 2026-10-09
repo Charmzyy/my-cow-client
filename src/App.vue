@@ -21,6 +21,9 @@ const navItems = computed(() => {
   if (auth.isOfficer) {
     return [{ to: '/officer', label: 'My queue', icon: 'review' }];
   }
+  if (auth.isWorker) {
+    return [{ to: '/herd', label: 'Herd', icon: 'herd' }];
+  }
   if (auth.isFarmer) {
     return [
       { to: '/herd', label: 'My herd', icon: 'herd' },

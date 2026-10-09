@@ -5,7 +5,7 @@ import EmptyState from '../ui/EmptyState.vue';
 import StatusChip from '../ui/StatusChip.vue';
 import { STORAGE_URL } from '../../config';
 import { api } from '../../api';
-import { firstName } from '../../auth';
+import { auth, firstName } from '../../auth';
 import { breedLabel, formatPct } from '../../breeds';
 import { SEXES, ageText, coverPhoto, displayName, readiness } from '../../animals';
 
@@ -44,11 +44,18 @@ onMounted(load);
     <div class="container">
       <header class="mc-page-head d-flex flex-wrap justify-content-between align-items-end gap-3">
         <div>
-          <span class="mc-eyebrow">{{ firstName() ? `${firstName()}’s farm` : 'My farm' }}</span>
-          <h1>My herd</h1>
-          <p>Every animal you register gets a full record, ready for a vet to certify.</p>
+          <template v-if="auth.isWorker">
+            <span class="mc-eyebrow">Farm worker</span>
+            <h1>Herd</h1>
+            <p>The animals on the farms you work on. Open one to add a record.</p>
+          </template>
+          <template v-else>
+            <span class="mc-eyebrow">{{ firstName() ? `${firstName()}’s farm` : 'My farm' }}</span>
+            <h1>My herd</h1>
+            <p>Every animal you register gets a full record, ready for a vet to certify.</p>
+          </template>
         </div>
-        <router-link to="/herd/new" class="btn btn-primary"><Icon name="plus" :size="18" /> Register animal</router-link>
+        <router-link v-if="!auth.isWorker" to="/herd/new" class="btn btn-primary"><Icon name="plus" :size="18" /> Register animal</router-link>
       </header>
 
       <div v-if="animals.length > 4" class="filters mc-card">
@@ -66,6 +73,8 @@ onMounted(load);
       <div v-if="loading" class="row g-3">
         <div v-for="n in 3" :key="n" class="col-sm-6 col-lg-4"><div class="mc-skeleton" style="height: 300px"></div></div>
       </div>
+      <EmptyState v-else-if="!animals.length && !error && auth.isWorker" icon="herd" title="No animals yet"
+        text="The farmer hasn’t registered any animals on your farm yet." />
       <EmptyState v-else-if="!animals.length && !error" icon="herd" title="No animals yet"
         text="Register your first animal: ear tag, a few details, then photos from your phone.">
         <router-link to="/herd/new" class="btn btn-primary"><Icon name="plus" :size="18" /> Register animal</router-link>
@@ -89,7 +98,8 @@ onMounted(load);
               </div>
               <div class="mc-meta">
                 <span>{{ SEXES[a.sex] }} · {{ ageText(a) }}</span>
-                <span v-if="a.county"><Icon name="pin" :size="13" /> {{ a.county.name }}</span>
+                <span v-if="a.holding"><Icon name="pin" :size="13" /> {{ a.holding.name }}</span>
+                <span v-else-if="a.county"><Icon name="pin" :size="13" /> {{ a.county.name }}</span>
               </div>
               <div class="herd-ai mt-auto">
                 <template v-if="a.ai_breed">AI: <b>{{ breedLabel(a.ai_breed) }}</b> · {{ formatPct(a.ai_confidence) }}</template>
@@ -101,7 +111,7 @@ onMounted(load);
         </div>
       </div>
 
-      <p class="officer-cta">
+      <p v-if="!auth.isWorker" class="officer-cta">
         <Icon name="shield" :size="16" /> Are you a vet or livestock officer?
         <router-link to="/become-officer">Apply to certify animals</router-link>
       </p>

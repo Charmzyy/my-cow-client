@@ -21,8 +21,11 @@ import AdminRequests from '../components/admin/AdminRequests.vue'
 import AdminOfficers from '../components/admin/AdminOfficers.vue'
 import Verify from '../components/Verify.vue'
 import FarmsPage from '../components/herd/FarmsPage.vue'
+import FarmTeam from '../components/herd/FarmTeam.vue'
 
-// meta.guest: only for signed-out visitors · meta.role: 'farmer' | 'officer' | 'admin' required
+// meta.guest: only for signed-out visitors · meta.role: the role (or list of roles) required
+// Farm workers (phone + PIN) share the herd screens; what they can change there comes from the API's `can`.
+const FARM_TEAM = ['farmer', 'worker'];
 const routes = [
   { path: '/', name: 'Landing', component: Landing, meta: { guest: true, title: 'Cattle breed identification' } },
   { path: '/forgotpassword', name: 'Forgot', component: Forgot, meta: { guest: true, title: 'Forgot password' } },
@@ -35,11 +38,12 @@ const routes = [
   { path: '/admin/certified/cows', name: 'CertifiedCows', component: CertifiedCows, meta: { role: 'admin', title: 'Certified cattle' } },
   { path: '/admin/all/posts', name: 'AllPosts', component: AllPosts, meta: { role: 'admin', title: 'Review queue' } },
   { path: '/user/userpost', name: 'UserPost', component: UserPost, meta: { role: 'farmer', title: 'Quick breed check' } },
-  { path: '/herd', name: 'MyHerd', component: MyHerd, meta: { role: 'farmer', title: 'My herd' } },
+  { path: '/herd', name: 'MyHerd', component: MyHerd, meta: { role: FARM_TEAM, title: 'Herd' } },
   { path: '/herd/new', name: 'AnimalNew', component: AnimalForm, meta: { role: 'farmer', title: 'Register animal' } },
-  { path: '/herd/:id', name: 'AnimalProfile', component: AnimalProfile, meta: { role: 'farmer', title: 'Animal' } },
+  { path: '/herd/:id', name: 'AnimalProfile', component: AnimalProfile, meta: { role: FARM_TEAM, title: 'Animal' } },
   { path: '/herd/:id/edit', name: 'AnimalEdit', component: AnimalForm, meta: { role: 'farmer', title: 'Edit animal' } },
   { path: '/farms', name: 'Farms', component: FarmsPage, meta: { role: 'farmer', title: 'Farms' } },
+  { path: '/farms/:id/team', name: 'FarmTeam', component: FarmTeam, meta: { role: 'farmer', title: 'Farm team' } },
   { path: '/become-officer', name: 'OfficerApply', component: OfficerApply, meta: { role: 'farmer', title: 'Become an officer' } },
   { path: '/officer', name: 'OfficerQueue', component: OfficerQueue, meta: { role: 'officer', title: 'My queue' } },
   { path: '/officer/requests/:id', name: 'OfficerReview', component: OfficerReview, meta: { role: 'officer', title: 'Review' } },
@@ -60,7 +64,8 @@ router.beforeEach((to) => {
   const signedIn = !!auth.token && !!auth.role;
   if (to.meta.role) {
     if (!signedIn) return { path: '/login', query: { next: to.fullPath } };
-    if (auth.role !== to.meta.role) return homePath();
+    const allowed = Array.isArray(to.meta.role) ? to.meta.role : [to.meta.role];
+    if (!allowed.includes(auth.role)) return homePath();
   }
   // Signed-in people skip the guest pages, unless their home *is* a guest page (avoids a redirect loop)
   if (to.meta.guest && signedIn && homePath() !== to.path) return homePath();
