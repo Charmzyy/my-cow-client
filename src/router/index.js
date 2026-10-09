@@ -22,6 +22,10 @@ import AdminOfficers from '../components/admin/AdminOfficers.vue'
 import Verify from '../components/Verify.vue'
 import FarmsPage from '../components/herd/FarmsPage.vue'
 import FarmTeam from '../components/herd/FarmTeam.vue'
+import FarmHome from '../components/farm/FarmHome.vue'
+import MilkSession from '../components/farm/MilkSession.vue'
+import MilkSales from '../components/farm/MilkSales.vue'
+import CowByCode from '../components/farm/CowByCode.vue'
 
 // meta.guest: only for signed-out visitors · meta.role: the role (or list of roles) required
 // Farm workers (phone + PIN) share the herd screens; what they can change there comes from the API's `can`.
@@ -38,6 +42,11 @@ const routes = [
   { path: '/admin/certified/cows', name: 'CertifiedCows', component: CertifiedCows, meta: { role: 'admin', title: 'Certified cattle' } },
   { path: '/admin/all/posts', name: 'AllPosts', component: AllPosts, meta: { role: 'admin', title: 'Review queue' } },
   { path: '/user/userpost', name: 'UserPost', component: UserPost, meta: { role: 'farmer', title: 'Quick breed check' } },
+  { path: '/farm/:id?', name: 'FarmHome', component: FarmHome, meta: { role: FARM_TEAM, title: 'Farm' } },
+  { path: '/farm/:id/milk', name: 'MilkSession', component: MilkSession, meta: { role: FARM_TEAM, title: 'Record milking' } },
+  { path: '/farm/:id/sales', name: 'MilkSales', component: MilkSales, meta: { role: FARM_TEAM, title: 'Deliveries' } },
+  // What an ear-tag QR sticker holds: scanning it with the phone camera opens the cow
+  { path: '/c/:code', name: 'CowByCode', component: CowByCode, meta: { role: FARM_TEAM, title: 'Cow' } },
   { path: '/herd', name: 'MyHerd', component: MyHerd, meta: { role: FARM_TEAM, title: 'Herd' } },
   { path: '/herd/new', name: 'AnimalNew', component: AnimalForm, meta: { role: 'farmer', title: 'Register animal' } },
   { path: '/herd/:id', name: 'AnimalProfile', component: AnimalProfile, meta: { role: FARM_TEAM, title: 'Animal' } },

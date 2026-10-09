@@ -6,6 +6,7 @@ import Icon from '../ui/Icon.vue';
 import PhotoSlots from './PhotoSlots.vue';
 import CertificationCard from './CertificationCard.vue';
 import AnimalEvents from './AnimalEvents.vue';
+import MilkCard from './MilkCard.vue';
 import MapView from '../ui/MapView.vue';
 import { hasPoint } from '../../geo';
 import { auth } from '../../auth';
@@ -98,6 +99,8 @@ onMounted(load);
               </div>
               <PhotoSlots :animal="animal" :editable="can.includes('update')" @updated="animal = $event" />
             </section>
+
+            <MilkCard v-if="animal.sex === 'female'" :key="animal.id" :animal="animal" :can-record="can.includes('log_event')" />
 
             <AnimalEvents :animal-id="animal.id" :sex="animal.sex" :readonly="!can.includes('log_event')" :can-manage="can.includes('update')" />
 

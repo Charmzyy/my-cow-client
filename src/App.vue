@@ -22,11 +22,15 @@ const navItems = computed(() => {
     return [{ to: '/officer', label: 'My queue', icon: 'review' }];
   }
   if (auth.isWorker) {
-    return [{ to: '/herd', label: 'Herd', icon: 'herd' }];
+    return [
+      { to: '/farm', label: 'Farm', icon: 'sprout' },
+      { to: '/herd', label: 'Herd', icon: 'herd' },
+    ];
   }
   if (auth.isFarmer) {
     return [
-      { to: '/herd', label: 'My herd', icon: 'herd' },
+      { to: '/farm', label: 'Farm', icon: 'sprout' },
+      { to: '/herd', label: 'Herd', icon: 'herd' },
       { to: '/farms', label: 'Farms', icon: 'pin' },
       { to: '/user/userpost', label: 'Quick check', icon: 'camera' },
     ];

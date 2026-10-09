@@ -3,7 +3,7 @@ import { api } from './api';
 
 export const blankFarm = () => ({
   name: '', county_id: '', sub_county: '', ward: '', village: '',
-  latitude: null, longitude: null, location_source: null, location_accuracy_m: null,
+  latitude: null, longitude: null, location_source: null, location_accuracy_m: null, milkings_per_day: 2,
 });
 
 export function farmPayload(farm) {

@@ -18,13 +18,16 @@ const props = defineProps({
 
 const canRemove = (ev) => !props.readonly && (props.canManage || ev.recorded_by === auth.user?.id);
 
-// Matches AnimalEvent::TYPES on the API
+// Matches AnimalEvent::TYPES on the API. Calving / dried off start and end lactations (milk records).
 const TYPES = {
   vaccination: { label: 'Vaccination', icon: 'shield', details: 'Vaccine, e.g. FMD, Lumpy skin' },
   deworming: { label: 'Deworming', icon: 'check-circle', details: 'Product used' },
   treatment: { label: 'Treatment', icon: 'alert', details: 'Condition and drug' },
   ai_service: { label: 'AI / service', icon: 'sprout', details: 'Bull name or straw code', femaleOnly: true },
   calving: { label: 'Calving', icon: 'plus', details: 'Calf sex and tag', femaleOnly: true },
+  dry_off: { label: 'Dried off', icon: 'clock', details: 'Reason, e.g. due to calve', femaleOnly: true },
+  heat: { label: 'In heat', icon: 'sun', details: 'Signs seen', femaleOnly: true },
+  pregnancy_check: { label: 'Pregnancy check', icon: 'check-circle', details: 'Result, e.g. 3 months in calf', femaleOnly: true },
   weight: { label: 'Weighing', icon: 'tag', details: 'How weighed, e.g. tape' },
   other: { label: 'Other', icon: 'edit', details: 'What happened' },
 };

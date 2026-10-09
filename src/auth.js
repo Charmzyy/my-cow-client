@@ -80,7 +80,7 @@ export function clearSession() {
 export function homePath() {
   if (auth.isAdmin) return '/admin/AdminDashboard';
   if (auth.isOfficer) return '/officer';
-  if (auth.isFarmer || auth.isWorker) return '/herd';
+  if (auth.isFarmer || auth.isWorker) return '/farm';
   return '/';
 }
 

@@ -43,6 +43,14 @@ onMounted(() => getCounties().then((c) => (counties.value = c)).catch(() => {}))
       <input :id="`${idPrefix}-village`" v-model="farm.village" class="form-control" maxlength="80" placeholder="e.g. Behind Kihingo primary school" />
     </div>
     <div class="span-2">
+      <label class="form-label" :for="`${idPrefix}-milkings`">Milkings a day</label>
+      <select :id="`${idPrefix}-milkings`" v-model.number="farm.milkings_per_day" class="form-select">
+        <option :value="1">Once (morning)</option>
+        <option :value="2">Twice (morning and evening)</option>
+        <option :value="3">Three times (morning, midday, evening)</option>
+      </select>
+    </div>
+    <div class="span-2">
       <span class="form-label d-block">Farm location on the map</span>
       <p class="form-hint mt-0">Optional, but it lets an officer drive straight to the farm for a visit. Only you and the assigned officer see it.</p>
       <MapPicker
