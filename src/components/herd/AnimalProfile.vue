@@ -11,6 +11,7 @@ import MapView from '../ui/MapView.vue';
 import { hasPoint } from '../../geo';
 import { auth } from '../../auth';
 import { api } from '../../api';
+import { formatDate } from '../../requests';
 import { BREEDS, breedLabel, confidenceLevel, formatPct } from '../../breeds';
 import { SEXES, ageText, displayName, recordSections } from '../../animals';
 
@@ -18,6 +19,7 @@ const route = useRoute();
 const router = useRouter();
 const animal = ref(null);
 const can = ref([]);            // what this person may do here (API: AnimalPolicy::abilities)
+const withdrawal = ref(null);   // { milk_clear_on, meat_clear_on, product } while a treatment's withdrawal runs
 const loading = ref(true);
 const error = ref('');
 const justCreated = computed(() => route.query.new === '1');
@@ -32,6 +34,7 @@ async function load(silent = false) {
     const data = await api(`/animals/${route.params.id}`);
     animal.value = data.animal;
     can.value = data.can || [];
+    withdrawal.value = data.withdrawal || null;
   } catch (e) {
     error.value = e.status === 404 || e.status === 403 ? 'This animal doesn’t exist or isn’t in your herd.' : e.message;
   } finally {
@@ -82,6 +85,15 @@ onMounted(load);
           </div>
         </header>
 
+        <div v-if="withdrawal" class="mc-alert mc-alert-error mb-4" role="status">
+          <Icon name="alert" :size="18" />
+          <span>
+            <strong>Under treatment<template v-if="withdrawal.product"> ({{ withdrawal.product }})</template>.</strong>
+            <template v-if="withdrawal.milk_clear_on"> Don’t sell her milk before {{ formatDate(withdrawal.milk_clear_on) }}; it’s recorded as discarded until then.</template>
+            <template v-if="withdrawal.meat_clear_on"> Don’t sell for slaughter before {{ formatDate(withdrawal.meat_clear_on) }}.</template>
+          </span>
+        </div>
+
         <div v-if="justCreated" class="mc-alert mc-alert-success mb-4">
           <Icon name="check-circle" :size="18" />
           <span><strong>{{ displayName(animal) }} is registered.</strong> Now add photos: at least both sides and the ear tag.</span>
@@ -102,7 +114,7 @@ onMounted(load);
 
             <MilkCard v-if="animal.sex === 'female'" :key="animal.id" :animal="animal" :can-record="can.includes('log_event')" />
 
-            <AnimalEvents :animal-id="animal.id" :sex="animal.sex" :readonly="!can.includes('log_event')" :can-manage="can.includes('update')" />
+            <AnimalEvents :animal-id="animal.id" :sex="animal.sex" :readonly="!can.includes('log_event')" :can-manage="can.includes('update')" @changed="load(true)" />
 
             <section v-for="s in sections" :key="s.title" class="mc-card details mb-3">
               <h2 class="h6">{{ s.title }}</h2>

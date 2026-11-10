@@ -12,6 +12,9 @@ import { api, apiDownload } from '../../api';
 import { auth, firstName } from '../../auth';
 import { FARM_ROLES, canManageFarm } from '../../farms';
 import { SESSIONS, kesText, litresText, shortDay } from '../../milk';
+import { formatDate } from '../../requests';
+
+const DOSE_LABEL = { vaccination: 'Vaccination', deworming: 'Deworming', treatment: 'Treatment' };
 
 const route = useRoute();
 const router = useRouter();
@@ -19,6 +22,7 @@ const LAST_FARM = 'mc-farm';
 
 const farms = ref([]);
 const summary = ref(null);
+const health = ref(null);       // { withdrawals, due } from /holdings/{id}/health
 const loading = ref(true);
 const error = ref('');
 const scanning = ref(false);
@@ -61,8 +65,12 @@ async function loadSummary() {
   if (!farm.value) return;
   remember(farm.value.id);
   summary.value = null;
+  health.value = null;
+  const id = farm.value.id;
+  // The health card is extra: if it fails, the milk numbers still show
+  api(`/holdings/${id}/health`).then((h) => { if (farm.value?.id === id) health.value = h; }).catch(() => {});
   try {
-    summary.value = await api(`/holdings/${farm.value.id}/milk/summary?days=30`);
+    summary.value = await api(`/holdings/${id}/milk/summary?days=30`);
   } catch (e) {
     error.value = e.message;
   }
@@ -158,6 +166,31 @@ onMounted(loadFarms);
             </div>
           </div>
 
+          <!-- Health: whose milk / meat can't be sold yet, and doses due. Hidden when there's nothing to act on. -->
+          <section v-if="health && (health.withdrawals.length || health.due.length)" class="mc-card p-3 mt-3 fh-health">
+            <h2 class="h6">Health</h2>
+            <ul class="fh-list">
+              <li v-for="w in health.withdrawals" :key="`w-${w.animal.id}`">
+                <span class="fh-dot danger" aria-hidden="true"></span>
+                <router-link :to="`/herd/${w.animal.id}`">{{ w.animal.name || `Tag ${w.animal.tag_number}` }}</router-link>
+                <span>
+                  <template v-if="w.milk_clear_on">Milk discarded until {{ formatDate(w.milk_clear_on) }}</template>
+                  <template v-if="w.milk_clear_on && w.meat_clear_on"> · </template>
+                  <template v-if="w.meat_clear_on">no slaughter before {{ formatDate(w.meat_clear_on) }}</template>
+                  <template v-if="w.product"> · {{ w.product }}</template>
+                </span>
+              </li>
+              <li v-for="d in health.due" :key="`d-${d.event_id}`">
+                <span class="fh-dot" :class="d.overdue ? 'danger' : 'gold'" aria-hidden="true"></span>
+                <router-link :to="`/herd/${d.animal.id}`">{{ d.animal.name || `Tag ${d.animal.tag_number}` }}</router-link>
+                <span>
+                  {{ DOSE_LABEL[d.type] }}<template v-if="d.product"> ({{ d.product }})</template>
+                  {{ d.overdue ? 'overdue since' : 'due' }} {{ formatDate(d.due_on) }}
+                </span>
+              </li>
+            </ul>
+          </section>
+
           <section class="mc-card p-3 mt-3">
             <div class="d-flex justify-content-between align-items-baseline gap-2 mb-2">
               <h2 class="h6 mb-0">Milk per day · last 30 days</h2>
@@ -200,6 +233,13 @@ onMounted(loadFarms);
 </template>
 
 <style>
+.fh-list { list-style: none; margin: 0; padding: 0; }
+.fh-list li { display: flex; flex-wrap: wrap; align-items: baseline; gap: .2rem .6rem; padding: .45rem 0; border-top: 1px solid var(--mc-border); font-size: .9rem; }
+.fh-list li:first-child { border-top: 0; }
+.fh-list li > span:last-child { color: var(--mc-ink-2); }
+.fh-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; align-self: center; background: var(--mc-muted); }
+.fh-dot.danger { background: var(--mc-danger); }
+.fh-dot.gold { background: var(--mc-gold-500); }
 .fh-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: .6rem; }
 .fh-primary {
   grid-column: 1 / -1; display: flex; align-items: center; gap: .9rem; padding: 1rem 1.1rem; border-radius: var(--mc-radius);

@@ -70,7 +70,7 @@ export function clearSession() {
   auth.user = null;
   auth.role = null;
   try {
-    ['token', 'user', 'role'].forEach((k) => localStorage.removeItem(k));
+    ['token', 'user', 'role', 'org'].forEach((k) => localStorage.removeItem(k));
   } catch {
     /* ignore */
   }

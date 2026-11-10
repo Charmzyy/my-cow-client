@@ -26,6 +26,7 @@ import FarmHome from '../components/farm/FarmHome.vue'
 import MilkSession from '../components/farm/MilkSession.vue'
 import MilkSales from '../components/farm/MilkSales.vue'
 import CowByCode from '../components/farm/CowByCode.vue'
+import OrgSettings from '../components/org/OrgSettings.vue'
 
 // meta.guest: only for signed-out visitors · meta.role: the role (or list of roles) required
 // Farm workers (phone + PIN) share the herd screens; what they can change there comes from the API's `can`.
@@ -53,6 +54,7 @@ const routes = [
   { path: '/herd/:id/edit', name: 'AnimalEdit', component: AnimalForm, meta: { role: 'farmer', title: 'Edit animal' } },
   { path: '/farms', name: 'Farms', component: FarmsPage, meta: { role: 'farmer', title: 'Farms' } },
   { path: '/farms/:id/team', name: 'FarmTeam', component: FarmTeam, meta: { role: 'farmer', title: 'Farm team' } },
+  { path: '/org', name: 'OrgSettings', component: OrgSettings, meta: { role: 'farmer', title: 'Organisation' } },
   { path: '/become-officer', name: 'OfficerApply', component: OfficerApply, meta: { role: 'farmer', title: 'Become an officer' } },
   { path: '/officer', name: 'OfficerQueue', component: OfficerQueue, meta: { role: 'officer', title: 'My queue' } },
   { path: '/officer/requests/:id', name: 'OfficerReview', component: OfficerReview, meta: { role: 'officer', title: 'Review' } },

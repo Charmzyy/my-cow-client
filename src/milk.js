@@ -24,9 +24,18 @@ export function parseLitres(text) {
   return Number.isFinite(n) && n >= 0 && n <= 60 ? Math.round(n * 100) / 100 : NaN;
 }
 
+/** The sheet's starting edits: saved values, and Discard ticked for cows under a treatment's withdrawal. */
+export function initialEdits(rows) {
+  const out = {};
+  for (const c of rows) out[c.id] = { text: c.log ? String(c.log.litres) : '', discarded: !!c.log?.discarded || !!c.withdrawal };
+  return out;
+}
+
 /**
  * Only what changed on the sheet, ready for POST /milk/session.
- * rows: the API's cows (with their saved `log`); edits: { [animalId]: { text, discarded } }.
+ * rows: the API's cows (with their saved `log`, and `withdrawal` when under treatment);
+ * edits: { [animalId]: { text, discarded } }. A cow under withdrawal is always sent as discarded
+ * (the API enforces it anyway).
  */
 export function changedEntries(rows, edits) {
   const out = [];
@@ -36,7 +45,7 @@ export function changedEntries(rows, edits) {
     const litres = parseLitres(edit.text);
     if (Number.isNaN(litres)) continue;
     const before = row.log ? { litres: row.log.litres, discarded: !!row.log.discarded } : { litres: null, discarded: false };
-    const discarded = litres === null ? false : !!edit.discarded;
+    const discarded = litres === null ? false : !!edit.discarded || !!row.withdrawal;
     if (litres === before.litres && discarded === before.discarded) continue;
     out.push({ animal_id: row.id, litres, discarded });
   }

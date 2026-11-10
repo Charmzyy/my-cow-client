@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { changedEntries, codeFromScan, kenyaToday, parseLitres, sheetTotal } from './milk';
+import { changedEntries, codeFromScan, initialEdits, kenyaToday, parseLitres, sheetTotal } from './milk';
 
 describe('parseLitres', () => {
   it('accepts dots, commas and blanks', () => {
@@ -44,6 +44,21 @@ describe('changedEntries', () => {
 
   it('skips entries that are not valid numbers', () => {
     expect(changedEntries(rows, { b: { text: '99' } })).toEqual([]);
+  });
+
+  it('always discards milk from a cow under treatment withdrawal', () => {
+    const treated = [{ id: 't', log: null, withdrawal: { until: '2026-11-12', product: 'Penstrep' } }];
+    expect(changedEntries(treated, { t: { text: '7', discarded: false } })).toEqual([{ animal_id: 't', litres: 7, discarded: true }]);
+  });
+});
+
+describe('initialEdits', () => {
+  it('starts from the saved values and ticks Discard for treated cows', () => {
+    const rows = [
+      { id: 'a', log: { litres: 8, discarded: false } },
+      { id: 't', log: null, withdrawal: { until: '2026-11-12' } },
+    ];
+    expect(initialEdits(rows)).toEqual({ a: { text: '8', discarded: false }, t: { text: '', discarded: true } });
   });
 });
 

@@ -1,9 +1,10 @@
 <script setup>
-import { computed, onMounted } from 'vue';
+import { computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import Icon from './components/ui/Icon.vue';
 import { auth, clearSession, firstName, homePath, refreshSession, roleLabel } from './auth';
 import { api } from './api';
+import { ORG_TYPES, org, resetOrg, setOrganisations, switchOrg } from './org';
 
 const route = useRoute();
 const router = useRouter();
@@ -33,20 +34,31 @@ const navItems = computed(() => {
       { to: '/herd', label: 'Herd', icon: 'herd' },
       { to: '/farms', label: 'Farms', icon: 'pin' },
       { to: '/user/userpost', label: 'Quick check', icon: 'camera' },
+      { to: '/org', label: 'Organisation', icon: 'users' },
     ];
   }
   return [];
 });
 
-// Pick up role changes made on the server (e.g. officer application approved) on every app start
-onMounted(async () => {
-  if (!auth.token) return;
+// On app start and after each sign-in: pick up role changes made on the server (e.g. officer
+// application approved) and the workspaces this person is in
+watch(() => auth.token, async (token) => {
+  if (!token) return;
   try {
-    if (refreshSession(await api('/me'))) router.replace(homePath());
+    const me = await api('/me');
+    setOrganisations(me.organisations);
+    if (refreshSession(me)) router.replace(homePath());
   } catch {
     /* offline: keep the saved session */
   }
-});
+}, { immediate: true });
+
+// Switching workspace re-opens the current screen (the router-view is keyed on it) with that workspace's data.
+// Farm/animal pages belong to one workspace, so those go back to the home screen instead.
+function onSwitchOrg(event) {
+  switchOrg(event.target.value);
+  if (route.params.id || route.params.code) router.push(homePath());
+}
 
 // Auth pages have their own full-screen layout (with its own logo), so no header there
 const isAuthPage = computed(() => ['Login', 'Register', 'Forgot', 'Reset'].includes(route.name));
@@ -54,6 +66,7 @@ const isAuthPage = computed(() => ['Login', 'Register', 'Forgot', 'Reset'].inclu
 async function logout() {
   api('/logout', { method: 'POST' }).catch(() => {}); // revoke the token server-side; don't wait for it
   clearSession();
+  resetOrg();
   router.push('/');
 }
 </script>
@@ -75,6 +88,12 @@ async function logout() {
 
         <div class="topbar-actions">
           <template v-if="auth.token">
+            <label v-if="org.list.length > 1" class="org-switch">
+              <span class="visually-hidden">Workspace</span>
+              <select class="form-select form-select-sm" :value="org.currentId" @change="onSwitchOrg">
+                <option v-for="o in org.list" :key="o.id" :value="o.id">{{ o.type === 'personal' ? ORG_TYPES.personal : o.name }}</option>
+              </select>
+            </label>
             <span class="hello d-none d-sm-inline-flex">
               <Icon name="user" :size="16" />{{ firstName() || 'Account' }}
               <span v-if="auth.role && !auth.isFarmer" class="mc-chip mc-chip-gold ms-1">{{ roleLabel() }}</span>
@@ -93,7 +112,7 @@ async function logout() {
     </header>
 
     <main class="shell-main">
-      <router-view />
+      <router-view :key="org.currentId || 'none'" />
     </main>
 
     <!-- Bottom tab bar on phones: thumb-reachable navigation whenever there's more than one section -->
@@ -130,6 +149,7 @@ async function logout() {
 .topnav-link.router-link-active { color: var(--mc-green-800); background: var(--mc-green-50); }
 
 .topbar-actions { margin-left: auto; display: flex; align-items: center; gap: .6rem; }
+.org-switch select { max-width: 11rem; min-height: 38px; font-weight: 600; }
 .hello { align-items: center; gap: .35rem; color: var(--mc-ink-2); font-weight: 600; font-size: .92rem; }
 
 .tabbar {

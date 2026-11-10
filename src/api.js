@@ -1,5 +1,6 @@
 import { API_URL } from './config';
 import { auth, clearSession } from './auth';
+import { org, resetOrg } from './org';
 
 export class ApiError extends Error {
   constructor(message, status, data) {
@@ -19,9 +20,17 @@ export function messageFrom(data) {
   return data.message || data.Message || '';
 }
 
-export async function api(path, { method = 'GET', body } = {}) {
+// Signed-in calls carry the token and the chosen workspace. { org: false } asks across all of them
+// (e.g. listing every farm I own when moving one between workspaces).
+function authHeaders(withOrg = true) {
   const headers = { Accept: 'application/json' };
   if (auth.token) headers.Authorization = `Bearer ${auth.token}`;
+  if (auth.token && withOrg && org.currentId) headers['X-Organisation'] = org.currentId;
+  return headers;
+}
+
+export async function api(path, { method = 'GET', body, org: withOrg = true } = {}) {
+  const headers = authHeaders(withOrg);
 
   const options = { method, headers };
   if (body instanceof FormData) {
@@ -46,6 +55,11 @@ export async function api(path, { method = 'GET', body } = {}) {
       clearSession();
       window.location.assign('/login');
     }
+    // Removed from the workspace (or a stale one from another account): forget it and start again
+    if (res.status === 403 && data?.message === 'You are not a member of this organisation.') {
+      resetOrg();
+      window.location.assign('/');
+    }
     // 500 = unexpected crash: hide the details. 503 etc. carry a message meant for people.
     if (res.status === 500 || (res.status > 500 && !messageFrom(data))) {
       console.error(`API ${method} ${path} failed`, data);
@@ -58,8 +72,7 @@ export async function api(path, { method = 'GET', body } = {}) {
 
 // Download a file (e.g. a certificate PDF) that needs the auth token, so a plain <a href> won't do.
 export async function apiDownload(path, filename) {
-  const headers = { Accept: 'application/json' }; // errors still come back as JSON
-  if (auth.token) headers.Authorization = `Bearer ${auth.token}`;
+  const headers = authHeaders(); // errors still come back as JSON
 
   let res;
   try {

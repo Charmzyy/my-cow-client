@@ -8,7 +8,8 @@ import Swal from 'sweetalert2';
 import Icon from '../ui/Icon.vue';
 import QrScanner from '../ui/QrScanner.vue';
 import { api } from '../../api';
-import { MILK_STATUS, SESSIONS, changedEntries, litresText, parseLitres, sheetTotal } from '../../milk';
+import { MILK_STATUS, SESSIONS, changedEntries, initialEdits, litresText, parseLitres, sheetTotal } from '../../milk';
+import { withdrawalText } from '../../health';
 
 const route = useRoute();
 const router = useRouter();
@@ -38,7 +39,7 @@ const filled = computed(() => (sheet.value?.cows || []).filter((c) => parseLitre
 
 function resetEdits(cows) {
   Object.keys(edits).forEach((k) => delete edits[k]);
-  for (const c of cows) edits[c.id] = { text: c.log ? String(c.log.litres) : '', discarded: !!c.log?.discarded };
+  Object.assign(edits, initialEdits(cows));
 }
 
 async function load() {
@@ -172,6 +173,7 @@ onMounted(load);
                 <span class="mc-chip" :class="MILK_STATUS[c.status].chip">{{ MILK_STATUS[c.status].label }}</span>
                 <template v-if="c.days_in_milk != null"> · day {{ c.days_in_milk }}</template>
               </span>
+              <span v-if="c.withdrawal" class="ms-withdrawal"><Icon name="alert" :size="13" /> {{ withdrawalText(c.withdrawal.until, c.withdrawal.product) }}</span>
             </div>
             <div class="ms-entry">
               <div class="ms-litres" :class="{ invalid: invalid(c) }">
@@ -186,8 +188,8 @@ onMounted(load);
                 />
                 <span aria-hidden="true">l</span>
               </div>
-              <label class="ms-discard" :title="'Milk not fit to sell (sick, treated, colostrum)'">
-                <input v-model="edits[c.id].discarded" type="checkbox" :disabled="parseLitres(edits[c.id]?.text) === null" /> Discard
+              <label class="ms-discard" :class="{ locked: c.withdrawal }" :title="c.withdrawal ? 'Under treatment withdrawal: this milk can’t be sold' : 'Milk not fit to sell (sick, treated, colostrum)'">
+                <input v-model="edits[c.id].discarded" type="checkbox" :disabled="!!c.withdrawal || parseLitres(edits[c.id]?.text) === null" /> Discard
               </label>
             </div>
             <p v-if="invalid(c)" class="ms-error" role="alert">Enter 0 to 60 litres.</p>
@@ -236,6 +238,8 @@ onMounted(load);
 .ms-input::placeholder { font-weight: 400; color: #b5b9b2; }
 .ms-litres.invalid .ms-input { border-color: var(--mc-danger); }
 .ms-discard { display: inline-flex; align-items: center; gap: .3rem; font-size: .82rem; color: var(--mc-ink-2); margin: 0; }
+.ms-discard.locked { color: var(--mc-danger); font-weight: 600; }
+.ms-withdrawal { display: inline-flex; align-items: center; gap: .25rem; margin-top: .2rem; font-size: .76rem; font-weight: 600; color: var(--mc-danger); }
 .ms-error { width: 100%; margin: 0; font-size: .8rem; color: var(--mc-danger); }
 .ms-bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 1010; background: var(--mc-surface); border-top: 1px solid var(--mc-border); box-shadow: 0 -4px 16px rgb(28 37 30 / 8%); }
 .ms-bar-inner { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding-top: .7rem; padding-bottom: .7rem; }
