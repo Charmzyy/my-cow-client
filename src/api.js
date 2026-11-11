@@ -22,15 +22,17 @@ export function messageFrom(data) {
 
 // Signed-in calls carry the token and the chosen workspace. { org: false } asks across all of them
 // (e.g. listing every farm I own when moving one between workspaces).
-function authHeaders(withOrg = true) {
+function authHeaders(withOrg = true, orgId = null) {
   const headers = { Accept: 'application/json' };
   if (auth.token) headers.Authorization = `Bearer ${auth.token}`;
-  if (auth.token && withOrg && org.currentId) headers['X-Organisation'] = org.currentId;
+  const workspace = orgId || org.currentId;
+  if (auth.token && withOrg && workspace) headers['X-Organisation'] = workspace;
   return headers;
 }
 
-export async function api(path, { method = 'GET', body, org: withOrg = true } = {}) {
-  const headers = authHeaders(withOrg);
+// orgId: send under a given workspace (the outbox replays entries in the workspace they were made in)
+export async function api(path, { method = 'GET', body, org: withOrg = true, orgId = null } = {}) {
+  const headers = authHeaders(withOrg, orgId);
 
   const options = { method, headers };
   if (body instanceof FormData) {
@@ -40,9 +42,16 @@ export async function api(path, { method = 'GET', body, org: withOrg = true } = 
     headers['Content-Type'] = 'application/json';
   }
 
+  // The offline cache (service worker) keys answers by address only, so reads name their workspace
+  // in the address too: otherwise, offline, one workspace's farms could show inside another's.
+  let url = `${API_URL}${path}`;
+  if (method === 'GET' && headers['X-Organisation']) {
+    url += `${url.includes('?') ? '&' : '?'}_ws=${encodeURIComponent(headers['X-Organisation'])}`;
+  }
+
   let res;
   try {
-    res = await fetch(`${API_URL}${path}`, options);
+    res = await fetch(url, options);
   } catch {
     throw new ApiError("Can't reach the server. Check your internet connection and try again.", 0);
   }

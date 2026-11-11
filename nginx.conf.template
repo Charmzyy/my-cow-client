@@ -43,6 +43,16 @@ server {
         add_header Cache-Control "no-cache";
     }
 
+    # The service worker and app manifest (offline app): always fetched fresh, so a new release
+    # reaches phones on their next visit. The manifest needs its own type to make the app installable.
+    location = /sw.js {
+        add_header Cache-Control "no-cache";
+    }
+    location = /manifest.webmanifest {
+        default_type application/manifest+json;
+        add_header Cache-Control "no-cache";
+    }
+
     # Hashed build assets never change, so let browsers cache them
     location /assets/ {
         expires 1y;

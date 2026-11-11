@@ -12,6 +12,7 @@ import { org } from '../../org';
 import { prefs, savePrefs } from '../../preferences';
 import { DEFAULT_ACCENT, THEMES, contrast, isHex, okForWhiteText, themeState } from '../../theme';
 import { PALETTES, slotColor } from '../../chartPalette';
+import { install, promptInstall } from '../../install';
 
 const TABS = { appearance: 'Appearance', profile: 'Profile' };
 const tab = ref('appearance');
@@ -98,6 +99,15 @@ async function saveProfile() {
 
       <!-- Appearance -->
       <template v-if="tab === 'appearance'">
+        <section v-if="!install.installed" class="mc-card p-3 p-sm-4 mb-3 st-install">
+          <span class="mc-mark" aria-hidden="true"></span>
+          <div class="flex-grow-1">
+            <h2 class="h5 mb-1">Install MyCow on this phone</h2>
+            <p class="small text-secondary mb-0" v-if="install.ios">Tap <b>Share</b> in Safari, then <b>Add to Home Screen</b>. MyCow then opens like an app, even with no signal.</p>
+            <p class="small text-secondary mb-0" v-else>Opens from your home screen like an app, even with no signal in the milking shed.</p>
+          </div>
+          <button v-if="install.prompt" type="button" class="btn btn-primary" @click="promptInstall">Install</button>
+        </section>
         <section class="mc-card p-3 p-sm-4 mb-3">
           <h2 class="h5 mb-1">Theme</h2>
           <p class="small text-secondary">Light reads best in sunlight. Dark is easier on the eyes at night.</p>
@@ -196,6 +206,7 @@ async function saveProfile() {
 </template>
 
 <style>
+.st-install { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; }
 .st-choices { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: .6rem; }
 .st-choices .choice { gap: .55rem; justify-content: flex-start; padding-left: .85rem; }
 .st-theme-dot { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--mc-border-strong); flex: none; }

@@ -2,7 +2,7 @@
 // Where the milk went: co-op deliveries, local sales, home use, calves. The week table balances
 // each day (milked = delivered + sold + home + calves + discarded + unaccounted) so leaks show up.
 // Owners and managers keep the buyer list and prices; everyone on the team records deliveries.
-import { computed, onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import Swal from 'sweetalert2';
 import Icon from '../ui/Icon.vue';
@@ -10,6 +10,7 @@ import { api } from '../../api';
 import { auth } from '../../auth';
 import { canManageFarm } from '../../farms';
 import { OUTLETS, kenyaToday, kesText, litresText, shortDay } from '../../milk';
+import { newId, send, waitingWhere } from '../../outbox';
 
 const route = useRoute();
 const farmId = route.params.id;
@@ -30,6 +31,10 @@ const saving = ref(false);
 const manager = computed(() => canManageFarm(farm.value));
 const sold = computed(() => OUTLETS[f.kind].sold);
 const buyerChoices = computed(() => buyers.value.filter((b) => b.active && b.kind === (f.kind === 'coop' ? 'coop' : 'local')));
+// Entries for this day saved on the phone and not sent yet
+const waiting = computed(() => waitingWhere('delivery', (i) => i.farmId === farmId && i.body.day === day.value));
+// Once they've been sent, show them from the server (with amounts and paid state)
+watch(() => waiting.value.length, (now, before) => { if (now < before) load(); });
 const week = computed(() => (summary.value?.series || []).slice().reverse().map((d) => {
   const out = d.coop + d.sale + d.home + d.calves + d.discarded;
   return { ...d, unaccounted: Math.round((d.produced - out) * 10) / 10 };
@@ -39,11 +44,14 @@ async function load() {
   loading.value = true;
   error.value = '';
   try {
+    // With no signal the farm and buyers come from the phone's cache (service worker); the day's
+    // list and the week table may not be cached, so they fall back to empty instead of failing the page
+    const offlineOr = (fallback) => (e) => (e.status === 0 ? fallback : Promise.reject(e));
     const [{ holdings }, sum, list, b] = await Promise.all([
       api('/holdings'),
-      api(`/holdings/${farmId}/milk/summary?days=7`),
-      api(`/holdings/${farmId}/milk/deliveries?from=${day.value}&to=${day.value}`),
-      api(`/holdings/${farmId}/milk/buyers`),
+      api(`/holdings/${farmId}/milk/summary?days=7`).catch(offlineOr({ series: [], offline: true })),
+      api(`/holdings/${farmId}/milk/deliveries?from=${day.value}&to=${day.value}`).catch(offlineOr({ deliveries: [] })),
+      api(`/holdings/${farmId}/milk/buyers`).catch(offlineOr({ buyers: [] })),
     ]);
     farm.value = holdings.find((h) => h.id === farmId) || null;
     summary.value = sum;
@@ -73,17 +81,22 @@ async function save() {
   errors.value = {};
   const num = (v) => (v === '' || v == null ? null : Number(String(v).replace(',', '.')));
   try {
-    await api(`/holdings/${farmId}/milk/deliveries`, {
-      method: 'POST',
-      body: {
-        day: day.value, kind: f.kind, buyer_id: sold.value ? f.buyer_id || null : null,
-        litres: num(f.litres), rejected_litres: f.kind === 'coop' ? num(f.rejected_litres) : null,
-        price_per_litre: sold.value ? num(f.price_per_litre) : null, paid: sold.value && f.paid, note: f.note || null,
-      },
+    const body = {
+      id: newId(),   // the phone's id: if it's sent twice (offline, lost reply) it's still saved once
+      day: day.value, kind: f.kind, buyer_id: sold.value ? f.buyer_id || null : null,
+      litres: num(f.litres), rejected_litres: f.kind === 'coop' ? num(f.rejected_litres) : null,
+      price_per_litre: sold.value ? num(f.price_per_litre) : null, paid: sold.value && f.paid, note: f.note || null,
+    };
+    const { queued } = await send(`/holdings/${farmId}/milk/deliveries`, {
+      body, kind: 'delivery', farmId, label: `${OUTLETS[body.kind].label}, ${litresText(body.litres)} on ${shortDay(body.day)}`,
     });
     Object.assign(f, blank(), { kind: f.kind, paid: f.kind === 'sale' });
-    Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Recorded', showConfirmButton: false, timer: 1800 });
-    await load();
+    if (queued) {
+      Swal.fire({ toast: true, position: 'top-end', icon: 'info', title: 'Saved on this phone', text: 'It will be sent when you have signal.', showConfirmButton: false, timer: 3000 });
+    } else {
+      Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Recorded', showConfirmButton: false, timer: 1800 });
+      await load();
+    }
   } catch (e) {
     errors.value = e.data?.errors ? Object.fromEntries(Object.entries(e.data.errors).map(([k, v]) => [k, v[0]])) : {};
     if (!e.data?.errors) Swal.fire({ icon: 'error', title: 'Couldn’t save', text: e.message });
@@ -218,8 +231,17 @@ onMounted(load);
         <!-- That day's entries -->
         <section class="mb-4">
           <h2 class="h6">Entries for {{ shortDay(day) }}</h2>
-          <p v-if="!deliveries.length" class="small text-secondary">Nothing recorded for this day yet.</p>
-          <ul v-else class="sd-list mc-card">
+          <p v-if="!deliveries.length && !waiting.length" class="small text-secondary">Nothing recorded for this day yet.</p>
+          <ul v-if="waiting.length" class="sd-list mc-card mb-2">
+            <li v-for="w in waiting" :key="w.id">
+              <span class="sd-main">
+                <strong>{{ OUTLETS[w.body.kind].label }}</strong>
+                <span>{{ litresText(w.body.litres) }}<template v-if="w.body.note"> · {{ w.body.note }}</template></span>
+              </span>
+              <span class="mc-chip mc-chip-gold"><Icon name="clock" :size="13" /> Waiting to send</span>
+            </li>
+          </ul>
+          <ul v-if="deliveries.length" class="sd-list mc-card">
             <li v-for="d in deliveries" :key="d.id">
               <span class="sd-main">
                 <strong>{{ OUTLETS[d.kind].label }}<template v-if="d.buyer"> · {{ d.buyer.name }}</template></strong>

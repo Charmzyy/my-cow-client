@@ -85,6 +85,66 @@ export function shortDay(isoDay) {
   return d.toLocaleDateString('en-KE', { weekday: 'short', day: 'numeric' });
 }
 
+/** The milking happening now, like the API's FarmClock::currentSession (Kenya time). */
+export function currentSession(sessions, now = new Date()) {
+  const hour = Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Africa/Nairobi', hour: '2-digit', hour12: false }).format(now)) % 24;
+  let guess = hour < 11 ? 'am' : hour < 15 ? 'midday' : 'pm';
+  if (!sessions.includes(guess)) guess = hour < 13 ? 'am' : 'pm';
+  return sessions.includes(guess) ? guess : sessions[0];
+}
+
+/**
+ * The milking sheet with no signal, built from the last sheet this phone loaded for the farm:
+ * same cows, nothing recorded yet. A treatment withdrawal still counts if it lasts past `day`.
+ */
+export function offlineSheet(saved, day, session) {
+  return {
+    farm: saved.farm,
+    day,
+    session,
+    sessions: saved.sessions,
+    today: kenyaToday(),
+    offline: true,
+    savedAt: saved.savedAt,
+    cows: saved.cows.map((c) => ({
+      ...c,
+      log: null,
+      withdrawal: c.withdrawal && c.withdrawal.until > day ? c.withdrawal : null,
+    })),
+    total: 0,
+  };
+}
+
+/** What to keep of a sheet so it can be rebuilt offline (cows only, not the day's entries). */
+export function sheetForOffline(sheet) {
+  return {
+    farm: sheet.farm,
+    sessions: sheet.sessions,
+    savedAt: new Date().toISOString(),
+    cows: sheet.cows.map(({ id, name, tag_number, qr_code, status, days_in_milk, last_litres, withdrawal }) => ({
+      id, name, tag_number, qr_code, status, days_in_milk, last_litres, withdrawal,
+    })),
+  };
+}
+
+/**
+ * Show entries still waiting on the phone as this sheet's saved values (marked `waiting`), so a
+ * sheet opened again before they're sent shows what was typed. `queued`: outbox items, oldest first.
+ */
+export function overlayWaiting(sheet, queued) {
+  const byCow = new Map(sheet.cows.map((c) => [c.id, c]));
+  for (const item of queued) {
+    const b = item.body;
+    if (b.day !== sheet.day || b.session !== sheet.session) continue;
+    for (const e of b.entries) {
+      const cow = byCow.get(e.animal_id);
+      if (cow) cow.log = e.litres === null ? null : { litres: e.litres, discarded: !!e.discarded, waiting: true };
+    }
+  }
+  sheet.total = Math.round(sheet.cows.reduce((t, c) => t + (c.log?.litres || 0), 0) * 100) / 100;
+  return sheet;
+}
+
 /** Today's date in Kenya time (the API's FarmClock), as YYYY-MM-DD. */
 export function kenyaToday(now = new Date()) {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Nairobi', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);

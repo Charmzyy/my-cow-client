@@ -8,8 +8,23 @@ import Swal from 'sweetalert2';
 import Icon from '../ui/Icon.vue';
 import QrScanner from '../ui/QrScanner.vue';
 import { api } from '../../api';
-import { MILK_STATUS, SESSIONS, changedEntries, initialEdits, litresText, parseLitres, sheetTotal } from '../../milk';
+import {
+  MILK_STATUS, SESSIONS, changedEntries, currentSession, initialEdits, kenyaToday, litresText, offlineSheet, overlayWaiting,
+  parseLitres, sheetForOffline, sheetTotal,
+} from '../../milk';
 import { withdrawalText } from '../../health';
+import { send, waitingWhere } from '../../outbox';
+import { formatDate } from '../../requests';
+
+// The farm's cow list, kept on the phone so the sheet opens with no signal (milking sheds rarely have any)
+const SAVED = (farmId) => `mc-sheet-${farmId}`;
+function keepForOffline(s) {
+  try { localStorage.setItem(SAVED(s.farm.id), JSON.stringify(sheetForOffline(s))); } catch { /* storage full */ }
+}
+function savedSheet(farmId) {
+  try { return JSON.parse(localStorage.getItem(SAVED(farmId))); } catch { return null; }
+}
+const waitingFor = (farmId) => waitingWhere('milk', (i) => i.farmId === farmId);
 
 const route = useRoute();
 const router = useRouter();
@@ -49,11 +64,24 @@ async function load() {
     const q = new URLSearchParams();
     if (route.query.day) q.set('day', route.query.day);
     if (route.query.session) q.set('session', route.query.session);
-    sheet.value = await api(`/holdings/${route.params.id}/milk/session?${q}`);
+    const fresh = await api(`/holdings/${route.params.id}/milk/session?${q}`);
+    keepForOffline(fresh);
+    sheet.value = overlayWaiting(fresh, waitingFor(fresh.farm.id));   // typed but not sent yet
     resetEdits(sheet.value.cows);
     if (route.query.cow) focusCow(route.query.cow);
   } catch (e) {
-    error.value = e.status === 403 ? 'You’re not on this farm’s team.' : e.message;
+    const saved = e.status === 0 ? savedSheet(route.params.id) : null;
+    if (saved) {
+      const day = route.query.day || kenyaToday();
+      const session = saved.sessions.includes(route.query.session) ? route.query.session : currentSession(saved.sessions);
+      sheet.value = overlayWaiting(offlineSheet(saved, day, session), waitingFor(route.params.id));
+      resetEdits(sheet.value.cows);
+      if (route.query.cow) focusCow(route.query.cow);
+    } else if (e.status === 0) {
+      error.value = 'No signal, and this farm’s cows haven’t been loaded on this phone yet. Open this page once with signal; after that it works offline.';
+    } else {
+      error.value = e.status === 403 ? 'You’re not on this farm’s team.' : e.message;
+    }
   } finally {
     loading.value = false;
   }
@@ -77,18 +105,31 @@ async function pick(change) {
 watch(() => [route.query.day, route.query.session], load);
 
 async function save() {
-  const entries = pending.value;
+  // When each number was typed: if two phones record the same cow offline, the latest one wins
+  const enteredAt = new Date().toISOString();
+  const entries = pending.value.map((e) => ({ ...e, entered_at: enteredAt }));
   if (!entries.length || saving.value) return;
   saving.value = true;
+  const s = sheet.value;
   try {
-    const res = await api(`/holdings/${sheet.value.farm.id}/milk/session`, {
-      method: 'POST', body: { day: sheet.value.day, session: sheet.value.session, entries },
+    const { data, queued } = await send(`/holdings/${s.farm.id}/milk/session`, {
+      body: { day: s.day, session: s.session, entries },
+      kind: 'milk',
+      farmId: s.farm.id,
+      label: `${SESSIONS[s.session]} milking, ${formatDate(s.day)} · ${entries.length} cow${entries.length > 1 ? 's' : ''}`,
     });
-    sheet.value = res;
-    resetEdits(res.cows);
-    Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: `Saved · ${litresText(res.total)} this milking`, showConfirmButton: false, timer: 2200 });
+    if (data) {
+      keepForOffline(data);
+      sheet.value = overlayWaiting(data, waitingFor(s.farm.id));
+      resetEdits(sheet.value.cows);
+      Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: `Saved · ${litresText(data.total)} this milking`, showConfirmButton: false, timer: 2200 });
+    } else {
+      sheet.value = overlayWaiting({ ...s, cows: s.cows.map((c) => ({ ...c })) }, [queued]);
+      resetEdits(sheet.value.cows);
+      Swal.fire({ toast: true, position: 'top-end', icon: 'info', title: 'Saved on this phone', text: 'It will be sent when you have signal.', showConfirmButton: false, timer: 3000 });
+    }
   } catch (e) {
-    Swal.fire({ icon: 'error', title: 'Couldn’t save', text: e.status === 0 ? `${e.message} Your entries are still here; try again when you have signal.` : e.message });
+    Swal.fire({ icon: 'error', title: 'Couldn’t save', text: e.message });
   } finally {
     saving.value = false;
   }
@@ -144,6 +185,11 @@ onMounted(load);
           <h1>{{ SESSIONS[sheet.session] }} milking</h1>
         </header>
 
+        <div v-if="sheet.offline" class="mc-alert mc-alert-info mb-3" role="status">
+          <Icon name="alert" :size="18" />
+          <span>No signal. Your cow list is from {{ formatDate(sheet.savedAt) }}. What you save stays on this phone and is sent when you’re back online.</span>
+        </div>
+
         <div class="ms-controls mc-card">
           <div class="seg" role="tablist" aria-label="Milking">
             <button v-for="s in sheet.sessions" :key="s" type="button" role="tab" :class="{ on: s === sheet.session }" :aria-selected="s === sheet.session" @click="pick({ session: s })">
@@ -173,6 +219,7 @@ onMounted(load);
                 <span class="mc-chip" :class="MILK_STATUS[c.status].chip">{{ MILK_STATUS[c.status].label }}</span>
                 <template v-if="c.days_in_milk != null"> · day {{ c.days_in_milk }}</template>
               </span>
+              <span v-if="c.log?.waiting" class="ms-waiting"><Icon name="clock" :size="13" /> Waiting to send</span>
               <span v-if="c.withdrawal" class="ms-withdrawal"><Icon name="alert" :size="13" /> {{ withdrawalText(c.withdrawal.until, c.withdrawal.product) }}</span>
             </div>
             <div class="ms-entry">
@@ -222,6 +269,7 @@ onMounted(load);
 
 <style>
 .ms-page { padding-bottom: 170px; }
+.ms-waiting { display: inline-flex; align-items: center; gap: .25rem; font-size: .78rem; font-weight: 650; color: var(--mc-gold-ink); }
 .ms-controls { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; justify-content: space-between; padding: .6rem; box-shadow: none; }
 .ms-day { width: auto; min-width: 160px; }
 .ms-list { list-style: none; margin: 0; padding: 0; display: grid; gap: .5rem; }

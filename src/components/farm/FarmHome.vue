@@ -23,6 +23,19 @@ const LAST_FARM = 'mc-farm';
 const farms = ref([]);
 const summary = ref(null);
 const health = ref(null);       // { withdrawals, due } from /holdings/{id}/health
+const clashes = ref([]);        // milk entries replaced by someone else's later entry (owners/managers)
+
+async function clashesChecked() {
+  const ids = clashes.value.map((c) => c.id);
+  clashes.value = [];
+  try {
+    await api(`/holdings/${farm.value.id}/milk/clashes/seen`, { method: 'PUT', body: { ids } });
+  } catch {
+    /* offline: they show again next time */
+  }
+}
+
+const clashLitres = (litres, discarded) => (litres == null ? 'cleared' : `${litresText(litres)}${discarded ? ' (discarded)' : ''}`);
 const loading = ref(true);
 const error = ref('');
 const scanning = ref(false);
@@ -69,6 +82,10 @@ async function loadSummary() {
   const id = farm.value.id;
   // The health card is extra: if it fails, the milk numbers still show
   api(`/holdings/${id}/health`).then((h) => { if (farm.value?.id === id) health.value = h; }).catch(() => {});
+  clashes.value = [];
+  if (canManageFarm(farm.value)) {
+    api(`/holdings/${id}/milk/clashes`).then((c) => { if (farm.value?.id === id) clashes.value = c.clashes; }).catch(() => {});
+  }
   try {
     summary.value = await api(`/holdings/${id}/milk/summary?days=30`);
   } catch (e) {
@@ -191,6 +208,22 @@ onMounted(loadFarms);
             </ul>
           </section>
 
+          <!-- Two people entered different milk for the same milking (usually offline): the later entry was kept -->
+          <section v-if="clashes.length" class="mc-card p-3 mt-3 fh-clash">
+            <h2 class="h6 mb-1"><Icon name="alert" :size="16" /> Check {{ clashes.length }} milk entr{{ clashes.length > 1 ? 'ies' : 'y' }}</h2>
+            <p class="small text-secondary mb-2">Two people recorded different milk for the same cow and milking. The entry typed last was kept.</p>
+            <ul class="fh-list">
+              <li v-for="c in clashes.slice(0, 8)" :key="c.id">
+                <router-link :to="`/farm/${farm.id}/milk?day=${c.milked_on}&session=${c.session}&cow=${c.animal_id}`">{{ c.animal?.name || `Tag ${c.animal?.tag_number}` }}</router-link>
+                <span>
+                  {{ SESSIONS[c.session] }} {{ formatDate(c.milked_on) }}: kept {{ clashLitres(c.kept_litres, c.kept_discarded) }}<template v-if="c.kept_by_user"> ({{ c.kept_by_user.fullname }})</template>,
+                  replaced {{ clashLitres(c.lost_litres, c.lost_discarded) }}<template v-if="c.lost_by_user"> ({{ c.lost_by_user.fullname }})</template>
+                </span>
+              </li>
+            </ul>
+            <button type="button" class="btn btn-outline btn-sm mt-2" @click="clashesChecked">Checked</button>
+          </section>
+
           <!-- Charts: each one can be changed (what, dates, chart type) and remembers the choice -->
           <div class="d-flex justify-content-between align-items-baseline mt-4 mb-2">
             <h2 class="h5 mb-0">Charts</h2>
@@ -256,6 +289,8 @@ onMounted(loadFarms);
 .fh-stat span { font-size: .8rem; color: var(--mc-muted); font-weight: 600; }
 .fh-stat strong { font-size: 1.5rem; font-variant-numeric: tabular-nums; color: var(--mc-ink); }
 .fh-stat small { font-size: .78rem; color: var(--mc-muted); }
+.fh-clash { border-color: var(--mc-gold-500); }
+.fh-clash h2 { display: flex; align-items: center; gap: .35rem; }
 .fh-charts { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); }
 .fh-cows { margin: 0; padding-left: 1.2rem; }
 .fh-cows li { padding: .3rem 0; }

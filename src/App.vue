@@ -7,6 +7,9 @@ import { api } from './api';
 import { API_URL } from './config';
 import { ORG_TYPES, org, resetOrg, setOrganisations, switchOrg } from './org';
 import { applyCurrentTheme, resetPrefs, setPrefs } from './preferences';
+import { flush, outbox } from './outbox';
+import SyncStatus from './components/ui/SyncStatus.vue';
+import Swal from 'sweetalert2';
 
 const route = useRoute();
 const router = useRouter();
@@ -51,6 +54,7 @@ watch(() => auth.token, async (token) => {
     setOrganisations(me.organisations);
     setPrefs(me.preferences);
     if (refreshSession(me)) router.replace(homePath());
+    flush();   // anything recorded offline last time goes now
   } catch {
     /* offline: keep the saved session */
   }
@@ -73,7 +77,21 @@ function onSwitchOrg(event) {
 const isAuthPage = computed(() => ['Login', 'Register', 'Forgot', 'Reset'].includes(route.name));
 
 async function logout() {
+  // Records still on this phone are kept for this account and sent at its next sign-in
+  const left = outbox.waiting.length + outbox.failed.length;
+  if (left) {
+    const { isConfirmed } = await Swal.fire({
+      icon: 'warning',
+      title: `${left} record${left > 1 ? 's' : ''} not sent yet`,
+      text: 'They stay on this phone and are sent the next time you sign in here. Sign out anyway?',
+      showCancelButton: true, confirmButtonText: 'Sign out', cancelButtonText: 'Stay', focusCancel: true,
+    });
+    if (!isConfirmed) return;
+  }
   api('/logout', { method: 'POST' }).catch(() => {}); // revoke the token server-side; don't wait for it
+  // The next person on this phone must not see this account's farms offline
+  globalThis.caches?.delete('mc-api').catch(() => {});
+  try { Object.keys(localStorage).filter((k) => k.startsWith('mc-sheet-')).forEach((k) => localStorage.removeItem(k)); } catch { /* ignore */ }
   clearSession();
   resetOrg();
   resetPrefs();
@@ -128,6 +146,8 @@ async function logout() {
       </div>
     </header>
 
+    <SyncStatus v-if="auth.token && !isAuthPage" class="sync-sticky" />
+
     <main class="shell-main">
       <router-view :key="org.currentId || 'none'" />
     </main>
@@ -151,6 +171,7 @@ async function logout() {
   background: var(--mc-topbar-bg); backdrop-filter: saturate(1.4) blur(10px);
   border-bottom: 1px solid var(--mc-border);
 }
+.sync-sticky { position: sticky; top: 64px; z-index: 1019; }
 .topbar-inner { display: flex; align-items: center; gap: 1.5rem; min-height: 64px; }
 
 .brand { display: inline-flex; align-items: center; gap: .6rem; color: var(--mc-ink); }

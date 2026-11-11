@@ -1,5 +1,51 @@
 import { describe, expect, it } from 'vitest';
-import { changedEntries, codeFromScan, initialEdits, kenyaToday, parseLitres, sheetTotal } from './milk';
+import {
+  changedEntries, codeFromScan, currentSession, initialEdits, kenyaToday, offlineSheet, overlayWaiting, parseLitres,
+  sheetForOffline, sheetTotal,
+} from './milk';
+
+describe('the milking sheet with no signal', () => {
+  const online = {
+    farm: { id: 'f1', name: 'Kamau farm' }, day: '2026-11-10', session: 'am', sessions: ['am', 'pm'], today: '2026-11-10',
+    cows: [
+      { id: 'c1', name: 'Daisy', tag_number: 'KE-1', qr_code: 'AAAA1111', status: 'milking', days_in_milk: 40, last_litres: 8, log: { litres: 8 }, withdrawal: { until: '2026-11-12', product: 'Pen-strep' } },
+      { id: 'c2', name: 'Zawadi', tag_number: 'KE-2', qr_code: 'BBBB2222', status: 'milking', days_in_milk: 90, last_litres: 6, log: null, withdrawal: null },
+    ],
+  };
+
+  it('keeps the cow list but not the day’s entries', () => {
+    const saved = sheetForOffline(online);
+    expect(saved.cows[0]).not.toHaveProperty('log');
+    expect(saved.cows.map((c) => c.id)).toEqual(['c1', 'c2']);
+  });
+
+  it('rebuilds an empty sheet for another day, with withdrawals that still apply', () => {
+    const saved = sheetForOffline(online);
+    expect(offlineSheet(saved, '2026-11-11', 'pm').cows[0].withdrawal).not.toBeNull();   // until the 12th
+    const later = offlineSheet(saved, '2026-11-12', 'am');
+    expect(later.offline).toBe(true);
+    expect(later.cows[0].withdrawal).toBeNull();
+    expect(later.cows.every((c) => c.log === null)).toBe(true);
+  });
+
+  it('shows entries waiting on the phone as that milking’s values', () => {
+    const sheet = offlineSheet(sheetForOffline(online), '2026-11-11', 'am');
+    overlayWaiting(sheet, [
+      { body: { day: '2026-11-11', session: 'am', entries: [{ animal_id: 'c1', litres: 7, discarded: true }, { animal_id: 'c2', litres: 5 }] } },
+      { body: { day: '2026-11-11', session: 'am', entries: [{ animal_id: 'c2', litres: 5.5 }] } },   // corrected later
+      { body: { day: '2026-11-11', session: 'pm', entries: [{ animal_id: 'c1', litres: 9 }] } },     // another milking
+    ]);
+    expect(sheet.cows[0].log).toEqual({ litres: 7, discarded: true, waiting: true });
+    expect(sheet.cows[1].log.litres).toBe(5.5);
+    expect(sheet.total).toBe(12.5);
+  });
+
+  it('guesses the milking from Kenya time', () => {
+    expect(currentSession(['am', 'pm'], new Date('2026-11-10T03:30:00Z'))).toBe('am');     // 06:30 in Nairobi
+    expect(currentSession(['am', 'midday', 'pm'], new Date('2026-11-10T09:30:00Z'))).toBe('midday');
+    expect(currentSession(['am', 'pm'], new Date('2026-11-10T14:00:00Z'))).toBe('pm');     // 17:00
+  });
+});
 
 describe('parseLitres', () => {
   it('accepts dots, commas and blanks', () => {

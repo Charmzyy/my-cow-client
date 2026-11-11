@@ -3,10 +3,11 @@
 // managers (canManage) remove any, others only their own. Officers see it read-only (`events` + `readonly`).
 // Vaccinations, deworming and treatments also take product, dose, withdrawal and next-due date: a milk
 // withdrawal locks the cow's milk as discarded on the API, so the parent reloads (`changed`).
-import { computed, onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref, watch } from 'vue';
 import Swal from 'sweetalert2';
 import Icon from '../ui/Icon.vue';
 import { api } from '../../api';
+import { newId, send, waitingWhere } from '../../outbox';
 import { formatDate } from '../../requests';
 import { auth } from '../../auth';
 import { isActive, isHealthType, toDays, toHours, withdrawalText } from '../../health';
@@ -43,6 +44,15 @@ const list = ref(props.events || []);
 const loading = ref(!props.events);
 const error = ref('');
 const adding = ref(false);
+
+// Records for this animal saved on the phone (no signal) and not sent yet
+const waiting = computed(() => waitingWhere('event', (i) => i.path === `/animals/${props.animalId}/events`));
+watch(() => waiting.value.length, (now, before) => {
+  if (now < before && !props.events) {
+    load();            // sent: show them from the server
+    emit('changed');   // a treatment may have locked milk as discarded
+  }
+});
 const saving = ref(false);
 const blank = () => ({
   details: '', value: '', notes: '',
@@ -72,6 +82,7 @@ async function save() {
   saving.value = true;
   try {
     const body = {
+      id: newId(),   // the phone's id: if it's sent twice (offline, lost reply) it's still saved once
       type: f.type, event_date: f.event_date,
       details: f.details.trim() || null, notes: f.notes.trim() || null, value: f.type === 'weight' ? f.value : null,
     };
@@ -82,10 +93,13 @@ async function save() {
         next_due_on: f.next_due_on || null,
       });
     }
-    list.value = (await api(`/animals/${props.animalId}/events`, { method: 'POST', body })).events;
+    const { data } = await send(`/animals/${props.animalId}/events`, {
+      body, kind: 'event', label: `${TYPES[body.type]?.label || body.type}, ${formatDate(body.event_date)}`,
+    });
+    if (data) list.value = data.events;   // else it waits on the phone and shows as "Waiting to send"
     Object.assign(f, blank(), { event_date: today() });
     adding.value = false;
-    emit('changed');
+    if (data) emit('changed');
   } catch (e) {
     error.value = e.message;
   } finally {
@@ -193,10 +207,21 @@ onMounted(load);
     <div v-if="error" class="mc-alert mc-alert-error my-2" role="alert"><Icon name="alert" :size="18" />{{ error }}</div>
 
     <div v-if="loading" class="mc-skeleton" style="height: 90px"></div>
-    <p v-else-if="!list.length" class="small text-secondary mb-0">
+    <p v-else-if="!list.length && !waiting.length" class="small text-secondary mb-0">
       {{ readonly ? 'The owner hasn’t recorded any events.' : 'No records yet. Vaccinations, deworming and AI services make a certificate more convincing to buyers.' }}
     </p>
-    <ul v-else class="ev-list">
+    <ul v-if="waiting.length" class="ev-list">
+      <li v-for="w in waiting" :key="w.id">
+        <span class="ev-icon"><Icon :name="TYPES[w.body.type]?.icon || 'edit'" :size="16" /></span>
+        <span class="ev-main">
+          <strong>{{ TYPES[w.body.type]?.label || w.body.type }}</strong>
+          <span v-if="w.body.product || w.body.details">{{ w.body.product || w.body.details }}</span>
+          <span class="mc-chip mc-chip-gold align-self-start"><Icon name="clock" :size="13" /> Waiting to send</span>
+        </span>
+        <span class="ev-date">{{ formatDate(w.body.event_date) }}</span>
+      </li>
+    </ul>
+    <ul v-if="!loading && list.length" class="ev-list">
       <li v-for="ev in list" :key="ev.id">
         <span class="ev-icon"><Icon :name="TYPES[ev.type]?.icon || 'edit'" :size="16" /></span>
         <span class="ev-main">
