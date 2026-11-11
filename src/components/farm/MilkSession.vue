@@ -235,7 +235,7 @@ onMounted(load);
 .ms-litres { position: relative; }
 .ms-litres span { position: absolute; right: .7rem; top: 50%; transform: translateY(-50%); color: var(--mc-muted); pointer-events: none; }
 .ms-input { width: 96px; padding-right: 1.6rem; font-size: 1.15rem; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
-.ms-input::placeholder { font-weight: 400; color: #b5b9b2; }
+.ms-input::placeholder { font-weight: 400; color: var(--mc-placeholder); }
 .ms-litres.invalid .ms-input { border-color: var(--mc-danger); }
 .ms-discard { display: inline-flex; align-items: center; gap: .3rem; font-size: .82rem; color: var(--mc-ink-2); margin: 0; }
 .ms-discard.locked { color: var(--mc-danger); font-weight: 600; }

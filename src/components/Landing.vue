@@ -223,7 +223,7 @@ const audiences = [
 .step { text-align: center; padding: 0 1rem; }
 .step-icon {
   position: relative; width: 68px; height: 68px; margin: 0 auto 1.1rem; border-radius: 20px;
-  display: grid; place-items: center; background: var(--mc-green-700); color: #fff;
+  display: grid; place-items: center; background: var(--mc-primary); color: var(--mc-on-primary);
 }
 .step-num {
   position: absolute; top: -8px; right: -8px; width: 28px; height: 28px; border-radius: 50%;
@@ -241,7 +241,7 @@ const audiences = [
 .cta-band {
   display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1.5rem;
   padding: 2.5rem; border-radius: 22px; color: #fff;
-  background: linear-gradient(135deg, var(--mc-green-800), var(--mc-green-950));
+  background: linear-gradient(135deg, var(--mc-primary-hover), var(--mc-primary-active));
   position: relative; overflow: hidden;
 }
 .cta-band::after {

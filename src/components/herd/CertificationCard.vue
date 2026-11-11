@@ -42,7 +42,7 @@ async function requestCertification() {
   const { isConfirmed, value } = await Swal.fire({
     title: 'Request certification',
     html: `
-      <p style="margin:0 0 .75rem;color:#4a554c">A verified officer will review this animal’s record and photos.</p>
+      <p style="margin:0 0 .75rem;color:var(--mc-ink-2)">A verified officer will review this animal’s record and photos.</p>
       <label style="display:block;text-align:left;font-weight:650;margin-bottom:.35rem">How should it be inspected?</label>
       <select id="mc-method" class="swal2-select" style="display:block;width:100%;margin:0 0 1rem">
         <option value="photo">Photo review: faster, from the photos you added</option>

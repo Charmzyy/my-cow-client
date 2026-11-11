@@ -4,6 +4,14 @@
 # The browser only ever talks to THIS server: the Vue app at /, and /api + /storage are
 # forwarded to Laravel. Same origin means no CORS, and no IP/host baked into the JS, so the
 # one image works on localhost, a LAN IP, a phone hotspot or a real domain.
+
+# Behind Caddy (HTTPS on the VPS) this nginx only sees plain http. Pass on the scheme Caddy
+# reports, so Laravel builds https:// links; with no proxy in front, fall back to our own.
+map $http_x_forwarded_proto $forwarded_proto {
+    default $http_x_forwarded_proto;
+    ''      $scheme;
+}
+
 server {
     listen 80;
     root /usr/share/nginx/html;
@@ -15,7 +23,7 @@ server {
         proxy_pass ${API_UPSTREAM};
         proxy_set_header Host $host;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Proto $forwarded_proto;
         proxy_read_timeout 60s;   # a breed prediction can take a few seconds on a small CPU
     }
 
@@ -23,6 +31,7 @@ server {
     location /storage/ {
         proxy_pass ${API_UPSTREAM};
         proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $forwarded_proto;
         expires 7d;
     }
 

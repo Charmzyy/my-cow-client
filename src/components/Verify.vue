@@ -123,7 +123,7 @@ watch(() => route.params.code, (c) => lookup(c ? String(c).toUpperCase() : ''), 
 .verify-banner strong { display: block; font-size: 1.2rem; }
 .verify-banner svg { flex: none; }
 .verify-banner.ok { background: var(--mc-green-50); border-color: var(--mc-green-100); color: var(--mc-green-800); }
-.verify-banner.bad { background: #fdf0ee; border-color: #f3c9c3; color: #7a1a12; }
+.verify-banner.bad { background: var(--mc-error-bg); border-color: var(--mc-error-border); color: var(--mc-error-ink); }
 .verify-banner.warn { background: var(--mc-ochre-50); border-color: var(--mc-ochre-50); color: var(--mc-ochre-700); }
 .verify-card { padding: 1.25rem; }
 .verify-head { display: flex; justify-content: space-between; gap: 1rem; align-items: flex-start; }

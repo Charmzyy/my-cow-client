@@ -218,7 +218,7 @@ onMounted(load);
 </template>
 
 <style scoped>
-.ev-form { border: 1px solid var(--mc-border, #e6e2d6); border-radius: 12px; padding: .85rem; margin-bottom: .75rem; background: #fcfbf7; }
+.ev-form { border: 1px solid var(--mc-border, #e6e2d6); border-radius: 12px; padding: .85rem; margin-bottom: .75rem; background: var(--mc-surface-2); }
 .ev-list { list-style: none; padding: 0; margin: 0; }
 .ev-list li { display: flex; gap: .7rem; align-items: flex-start; padding: .6rem 0; border-top: 1px solid var(--mc-border, #e6e2d6); }
 .ev-list li:first-child { border-top: 0; }
@@ -231,5 +231,5 @@ onMounted(load);
 .ev-unit { max-width: 6.5rem; }
 .ev-hint { color: var(--mc-danger); display: flex; align-items: center; gap: .3rem; }
 .ev-flag { font-size: .8rem; font-weight: 600; color: var(--mc-danger) !important; }
-.ev-del:hover { color: #a3261c; }
+.ev-del:hover { color: var(--mc-danger); }
 </style>

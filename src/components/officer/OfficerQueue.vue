@@ -124,7 +124,7 @@ onMounted(load);
 .queue li + li { border-top: 1px solid var(--mc-border); }
 .queue-row { display: flex; align-items: center; gap: .9rem; padding: .85rem 1rem; color: var(--mc-ink); }
 .queue-row:hover { background: var(--mc-green-50); color: var(--mc-ink); }
-.queue-thumb { flex: none; width: 64px; height: 48px; border-radius: 8px; object-fit: cover; background: #ece8dc; }
+.queue-thumb { flex: none; width: 64px; height: 48px; border-radius: 8px; object-fit: cover; background: var(--mc-subtle); }
 .queue-thumb-empty { display: grid; place-items: center; color: var(--mc-muted); }
 .queue-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .queue-sub { font-size: .85rem; color: var(--mc-ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

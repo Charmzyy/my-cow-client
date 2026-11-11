@@ -6,12 +6,12 @@ import { useRoute, useRouter } from 'vue-router';
 import Swal from 'sweetalert2';
 import Icon from '../ui/Icon.vue';
 import EmptyState from '../ui/EmptyState.vue';
-import BarChart from '../ui/BarChart.vue';
+import ChartCard from '../ui/ChartCard.vue';
 import QrScanner from '../ui/QrScanner.vue';
 import { api, apiDownload } from '../../api';
 import { auth, firstName } from '../../auth';
 import { FARM_ROLES, canManageFarm } from '../../farms';
-import { SESSIONS, kesText, litresText, shortDay } from '../../milk';
+import { SESSIONS, kesText, litresText } from '../../milk';
 import { formatDate } from '../../requests';
 
 const DOSE_LABEL = { vaccination: 'Vaccination', deworming: 'Deworming', treatment: 'Treatment' };
@@ -191,21 +191,19 @@ onMounted(loadFarms);
             </ul>
           </section>
 
-          <section class="mc-card p-3 mt-3">
-            <div class="d-flex justify-content-between align-items-baseline gap-2 mb-2">
-              <h2 class="h6 mb-0">Milk per day · last 30 days</h2>
-              <span class="small text-secondary">{{ litresText(summary.totals.produced, 0) }} in total</span>
-            </div>
-            <BarChart
-              v-if="summary.totals.produced"
-              title="Litres milked per day, last 30 days"
-              :labels="series.map((d) => shortDay(d.day))"
-              :values="series.map((d) => d.produced)"
-              :details="series.map((d) => (d.coop + d.sale ? `${litresText(d.coop + d.sale)} sold` : ''))"
-              :format="(v) => litresText(v)"
-            />
-            <p v-else class="small text-secondary mb-0">No milk recorded in the last 30 days. Tap <b>Record milking</b> at the next milking.</p>
-          </section>
+          <!-- Charts: each one can be changed (what, dates, chart type) and remembers the choice -->
+          <div class="d-flex justify-content-between align-items-baseline mt-4 mb-2">
+            <h2 class="h5 mb-0">Charts</h2>
+            <router-link :to="`/farm/${farm.id}/reports`" class="small fw-semibold"><Icon name="chart" :size="15" /> All reports</router-link>
+          </div>
+          <ChartCard id="farm-milk" :farm="farm" :money="canManageFarm(farm)"
+            :defaults="{ metric: 'milk.produced', group: 'time', type: 'stacked', range: '30', granularity: 'day' }" />
+          <div class="fh-charts mt-3">
+            <ChartCard id="farm-outlets" :farm="farm" :money="canManageFarm(farm)" height="200px"
+              :defaults="{ metric: 'milk.outlets', group: 'outlet', type: 'doughnut', range: '30' }" />
+            <ChartCard id="farm-herd" :farm="farm" :money="canManageFarm(farm)" height="200px"
+              :defaults="{ metric: 'herd.composition', group: 'breed', type: 'pie' }" />
+          </div>
 
           <section v-if="summary.cows.length" class="mc-card p-3 mt-3">
             <h2 class="h6">Cows · last 30 days</h2>
@@ -243,9 +241,9 @@ onMounted(loadFarms);
 .fh-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: .6rem; }
 .fh-primary {
   grid-column: 1 / -1; display: flex; align-items: center; gap: .9rem; padding: 1rem 1.1rem; border-radius: var(--mc-radius);
-  background: var(--mc-green-700); color: #fff; box-shadow: var(--mc-shadow);
+  background: var(--mc-primary); color: var(--mc-on-primary); box-shadow: var(--mc-shadow);
 }
-.fh-primary:hover { color: #fff; background: var(--mc-green-800); }
+.fh-primary:hover { color: var(--mc-on-primary); background: var(--mc-primary-hover); }
 .fh-primary strong { display: block; font-size: 1.15rem; }
 .fh-primary small { display: block; opacity: .85; }
 .fh-action {
@@ -258,6 +256,7 @@ onMounted(loadFarms);
 .fh-stat span { font-size: .8rem; color: var(--mc-muted); font-weight: 600; }
 .fh-stat strong { font-size: 1.5rem; font-variant-numeric: tabular-nums; color: var(--mc-ink); }
 .fh-stat small { font-size: .78rem; color: var(--mc-muted); }
+.fh-charts { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); }
 .fh-cows { margin: 0; padding-left: 1.2rem; }
 .fh-cows li { padding: .3rem 0; }
 .fh-cows li span { color: var(--mc-muted); font-size: .88rem; margin-left: .4rem; }

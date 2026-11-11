@@ -44,7 +44,7 @@ defineProps({
 
 .auth-aside {
   position: relative; overflow: hidden; color: #fff; padding: 7rem 3.5rem 3rem;
-  background: linear-gradient(160deg, var(--mc-green-700) 0%, var(--mc-green-900) 70%, var(--mc-green-950) 100%);
+  background: linear-gradient(160deg, var(--mc-primary) 0%, var(--mc-primary-active) 70%, #0b1f12 100%);   /* white text: stays dark in every theme */
   align-items: center;
 }
 .auth-aside-inner { position: relative; z-index: 1; max-width: 26rem; }

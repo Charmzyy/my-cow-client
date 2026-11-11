@@ -7,6 +7,8 @@ import Swal from 'sweetalert2';
 import Icon from '../ui/Icon.vue';
 import { api } from '../../api';
 import { auth } from '../../auth';
+import { API_URL } from '../../config';
+import { contrast, okForWhiteText } from '../../theme';
 import { ORG_ROLES, ORG_TYPES, canManageOrg, canManageOrgMember, org, setOrganisations, switchOrg } from '../../org';
 
 const current = computed(() => org.current);
@@ -45,6 +47,7 @@ async function load() {
   try {
     await refreshOrgs();
     name.value = current.value?.name || '';
+    resetBrandForm();
     const [team, farms] = await Promise.all([
       manages.value ? api(`/orgs/${org.currentId}/members`) : Promise.resolve({ members: [] }),
       auth.isFarmer ? api('/holdings', { org: false }) : Promise.resolve({ holdings: [] }),
@@ -147,6 +150,49 @@ async function bringIn(farm) {
   }
 }
 
+// ---- Branding ----------------------------------------------------------------------------
+const brand = reactive({ useColor: false, color: '#1b5e37', logo: null, removeLogo: false });
+const logoPreview = computed(() => {
+  if (brand.logo) return URL.createObjectURL(brand.logo);
+  if (brand.removeLogo || !current.value?.logo_url) return null;
+  return `${API_URL}${current.value.logo_url}`;
+});
+
+function resetBrandForm() {
+  Object.assign(brand, {
+    useColor: !!current.value?.brand_color,
+    color: current.value?.brand_color || '#1b5e37',
+    logo: null,
+    removeLogo: false,
+  });
+}
+
+function pickLogo(event) {
+  brand.logo = event.target.files?.[0] || null;
+  brand.removeLogo = false;
+}
+
+async function saveBranding() {
+  if (saving.value) return;
+  saving.value = true;
+  errors.value = {};
+  try {
+    const fd = new FormData();
+    fd.append('brand_color', brand.useColor ? brand.color : '');
+    if (brand.logo) fd.append('logo', brand.logo);
+    else if (brand.removeLogo) fd.append('remove_logo', '1');
+    await api(`/orgs/${org.currentId}/branding`, { method: 'POST', body: fd });
+    await refreshOrgs();   // the header and colours repaint from the new org data
+    resetBrandForm();
+    toast('Branding saved');
+  } catch (e) {
+    errors.value = fieldErrors(e);
+    if (!e.data?.errors) Swal.fire({ icon: 'error', title: 'Couldn’t save the branding', text: e.message });
+  } finally {
+    saving.value = false;
+  }
+}
+
 function contact(m) {
   return m.user.email || m.user.login_phone || m.user.phone || '';
 }
@@ -205,6 +251,41 @@ onMounted(load);
             </form>
           </section>
 
+          <!-- White-label: the co-op's colour and logo, for everyone working in it -->
+          <section v-if="manages && current.type !== 'personal'" class="mc-card p-3 p-sm-4 mb-4">
+            <h2 class="h5 mb-1">Branding</h2>
+            <p class="small text-secondary">Everyone working in {{ current.name }} sees its colour and logo instead of MyCow’s.</p>
+            <form novalidate @submit.prevent="saveBranding">
+              <div class="org-brand">
+                <div>
+                  <label class="form-label" for="b-color">Colour</label>
+                  <div class="d-flex align-items-center gap-2">
+                    <input id="b-color" v-model="brand.color" type="color" class="form-control form-control-color" :disabled="!brand.useColor" />
+                    <label class="form-check-label small"><input v-model="brand.useColor" type="checkbox" class="form-check-input me-1" />Use a brand colour</label>
+                  </div>
+                  <p v-if="brand.useColor && !okForWhiteText(brand.color)" class="small org-warn mt-2 mb-0">
+                    <Icon name="alert" :size="15" /> Too light for white text ({{ contrast(brand.color, '#ffffff') }}:1, needs 4.5:1). Pick a darker shade.
+                  </p>
+                  <div v-else-if="brand.useColor" class="org-brand-sample mt-2" :style="{ background: brand.color }">Record milking</div>
+                </div>
+                <div>
+                  <label class="form-label" for="b-logo">Logo</label>
+                  <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <img v-if="logoPreview" :src="logoPreview" alt="Logo preview" class="org-logo" />
+                    <input id="b-logo" type="file" accept="image/png,image/jpeg,image/webp" class="form-control" :class="{ 'is-invalid': errors.logo }" @change="pickLogo" />
+                  </div>
+                  <div v-if="errors.logo" class="invalid-feedback d-block">{{ errors.logo }}</div>
+                  <p class="form-hint">PNG, JPG or WebP, up to 512 KB. A wide logo on a clear background looks best.</p>
+                  <button v-if="current.logo_url && !brand.removeLogo && !brand.logo" type="button" class="btn btn-link btn-sm p-0 text-danger" @click="brand.removeLogo = true">Remove logo</button>
+                </div>
+              </div>
+              <div v-if="errors.brand_color" class="mc-alert mc-alert-error mt-3"><Icon name="alert" :size="18" />{{ errors.brand_color }}</div>
+              <button class="btn btn-primary mt-3" :disabled="saving || (brand.useColor && !okForWhiteText(brand.color))">
+                <span v-if="saving" class="spinner-border spinner-border-sm"></span> Save branding
+              </button>
+            </form>
+          </section>
+
           <section v-if="manages" class="mb-4">
             <h2 class="h5 mb-2">People</h2>
             <form class="mc-card p-3 mb-3 d-flex flex-wrap gap-2 align-items-start" novalidate @submit.prevent="addMember">
@@ -260,3 +341,11 @@ onMounted(load);
     </div>
   </div>
 </template>
+
+<style>
+.org-brand { display: grid; gap: 1.25rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); }
+.org-brand .form-control-color { width: 56px; min-height: 44px; padding: .25rem; }
+.org-brand-sample { display: inline-flex; align-items: center; min-height: 40px; padding: .4rem 1rem; border-radius: var(--mc-radius-sm); color: #fff; font-weight: 650; font-size: .9rem; }
+.org-logo { height: 44px; width: auto; max-width: 140px; object-fit: contain; border: 1px solid var(--mc-border); border-radius: 8px; background: #fff; padding: 2px; }
+.org-warn { color: var(--mc-danger); display: flex; gap: .3rem; align-items: center; }
+</style>

@@ -224,7 +224,7 @@ onBeforeUnmount(() => previewUrl.value && URL.revokeObjectURL(previewUrl.value))
 .dropzone:focus-within { outline: 3px solid var(--mc-gold-500); outline-offset: 2px; }
 .dropzone.filled { padding: 0; border-style: solid; background: #000; min-height: 0; }
 .dropzone.locked { cursor: default; }
-.dropzone-icon { width: 64px; height: 64px; border-radius: 18px; display: grid; place-items: center; background: var(--mc-green-700); color: #fff; margin-bottom: .5rem; }
+.dropzone-icon { width: 64px; height: 64px; border-radius: 18px; display: grid; place-items: center; background: var(--mc-primary); color: var(--mc-on-primary); margin-bottom: .5rem; }
 .dropzone-title { font-size: 1.1rem; }
 .dropzone-sub { color: var(--mc-ink-2); }
 .dropzone-meta { color: var(--mc-muted); font-size: .85rem; margin-top: .25rem; }
