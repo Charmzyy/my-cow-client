@@ -6,7 +6,10 @@
 # ---------------------------------------------------------------------------
 
 # ---- Stage 1: build (Node exists only here, never in the final image) ----
-FROM node:22-alpine AS build
+# The built files (HTML, JS, CSS) are the same for every processor, so this stage always runs on
+# the build machine's own platform ($BUILDPLATFORM). Without it, the arm64 image would run npm ci
+# and Vite under emulation in CI: 30+ minutes instead of 2. Only the small nginx stage is per-platform.
+FROM --platform=$BUILDPLATFORM node:22-alpine AS build
 WORKDIR /app
 
 # deps first for layer caching; `npm ci` = exact versions from package-lock.json
